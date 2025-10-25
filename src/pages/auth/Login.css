@@ -1,0 +1,450 @@
+/* 万象生活登录页面 - 高级样式 */
+
+/* 登录页面容器 */
+.wan-login-page {
+  min-height: 66vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff6b6b 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* 动态背景形状 */
+.wan-login-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.wan-bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  animation: float 20s infinite ease-in-out;
+}
+
+.wan-bg-shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -150px;
+  left: -150px;
+  animation-delay: 0s;
+}
+
+.wan-bg-shape-2 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  right: -100px;
+  animation-delay: 5s;
+}
+
+.wan-bg-shape-3 {
+  width: 150px;
+  height: 150px;
+  bottom: -75px;
+  left: 30%;
+  animation-delay: 10s;
+}
+
+.wan-bg-shape-4 {
+  width: 250px;
+  height: 250px;
+  top: 20%;
+  left: 60%;
+  animation-delay: 15s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.7;
+  }
+  33% {
+    transform: translateY(-30px) rotate(120deg);
+    opacity: 0.9;
+  }
+  66% {
+    transform: translateY(30px) rotate(240deg);
+    opacity: 0.5;
+  }
+}
+
+/* 登录容器 */
+.wan-login-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 440px;
+}
+
+/* 登录卡片 */
+.wan-login-card {
+  border-radius: 24px !important;
+  border: none !important;
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.1),
+    0 16px 32px rgba(0, 0, 0, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.wan-login-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 40px 80px rgba(0, 0, 0, 0.15),
+    0 20px 40px rgba(0, 0, 0, 0.12),
+    0 10px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 头部品牌区域 */
+.wan-login-header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-top: 16px;
+}
+
+.wan-brand-logo {
+  margin-bottom: 16px;
+}
+
+.wan-logo-container {
+  display: inline-block;
+  position: relative;
+}
+
+.wan-logo-svg {
+  filter: drop-shadow(0 8px 16px rgba(102, 126, 234, 0.3));
+  animation: pulse 3s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+.wan-brand-text {
+  text-align: center;
+}
+
+.wan-login-title {
+  margin-bottom: 6px !important;
+  background: linear-gradient(135deg, #667eea, #ff6b6b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700 !important;
+  font-size: 28px !important;
+  letter-spacing: -0.5px;
+}
+
+.wan-login-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* 表单样式 */
+.wan-login-form {
+  margin-bottom: 24px;
+}
+
+.wan-form-label {
+  color: #374151;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.wan-input-field {
+  height: 40px !important;
+  border-radius: 14px !important;
+  border: 2px solid #f3f4f6 !important;
+  background: #fafafa !important;
+  transition: all 0.3s ease !important;
+  font-size: 15px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.wan-input-field:hover {
+  border-color: #e5e7eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+.wan-input-field:focus,
+.wan-input-field:focus-within {
+  border-color: #8b5cf6 !important;
+  background: #ffffff !important;
+  box-shadow:
+    0 0 0 4px rgba(139, 92, 246, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px);
+}
+
+/* 选项区域 */
+.wan-login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.wan-checkbox {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.wan-checkbox:hover {
+  color: #374151;
+}
+
+.wan-forgot-link {
+  color: #8b5cf6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.wan-forgot-link:hover {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
+/* 提交按钮 */
+.wan-submit-item {
+  margin-bottom: 16px;
+}
+
+.wan-login-button {
+  width: 100% !important;
+  height: 40px !important;
+  border-radius: 14px !important;
+  border: none !important;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: white !important;
+  box-shadow:
+    0 6px 20px rgba(139, 92, 246, 0.3),
+    0 3px 10px rgba(139, 92, 246, 0.2) !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.wan-login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.wan-login-button:hover::before {
+  left: 100%;
+}
+
+.wan-login-button:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 12px 32px rgba(139, 92, 246, 0.4),
+    0 6px 16px rgba(139, 92, 246, 0.3) !important;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+}
+
+.wan-login-button:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* 分隔线 */
+.wan-divider-wrapper {
+  margin: 24px 0 20px;
+}
+
+.wan-divider {
+  border-color: #e5e7eb !important;
+  border-style: dashed !important;
+}
+
+.wan-divider-text {
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+}
+
+/* 社交登录 */
+.wan-social-login {
+  margin-bottom: 24px;
+}
+
+.wan-social-buttons {
+  width: 100%;
+  justify-content: center;
+}
+
+.wan-social-btn {
+  height: 40px !important;
+  border-radius: 12px !important;
+  border: 2px solid #f3f4f6 !important;
+  background: #ffffff !important;
+  color: #6b7280 !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.3s ease !important;
+}
+
+.wan-social-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.wan-wechat-btn:hover {
+  border-color: #07c160 !important;
+  color: #07c160 !important;
+  background: rgba(7, 193, 96, 0.05) !important;
+}
+
+.wan-qq-btn:hover {
+  border-color: #12b7f5 !important;
+  color: #12b7f5 !important;
+  background: rgba(18, 183, 245, 0.05) !important;
+}
+
+.wan-alipay-btn:hover {
+  border-color: #1677ff !important;
+  color: #1677ff !important;
+  background: rgba(22, 119, 255, 0.05) !important;
+}
+
+/* 注册区域 */
+.wan-register-section {
+  text-align: center;
+  padding-bottom: 16px;
+}
+
+.wan-register-text {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.wan-register-link {
+  color: #8b5cf6;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 6px;
+  transition: all 0.3s ease;
+}
+
+.wan-register-link:hover {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
+/* 错误提示 */
+.wan-login-error {
+  margin-bottom: 24px;
+  border-radius: 12px !important;
+  border: none !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #dc2626 !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .wan-login-page {
+    padding: 16px;
+  }
+
+  .wan-login-container {
+    max-width: 100%;
+  }
+
+  .wan-login-card {
+    border-radius: 20px !important;
+    margin: 0 -8px;
+  }
+
+  .wan-login-header {
+    margin-bottom: 32px;
+    padding-top: 16px;
+  }
+
+  .wan-login-title {
+    font-size: 28px !important;
+  }
+
+  .wan-input-field,
+  .wan-login-button {
+    height: 44px !important;
+  }
+
+  .wan-login-options {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .wan-social-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .wan-social-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wan-bg-shape {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 480px) {
+  .wan-login-page {
+    padding: 12px;
+  }
+
+  .wan-login-header {
+    margin-bottom: 24px;
+  }
+
+  .wan-login-title {
+    font-size: 24px !important;
+  }
+
+  .wan-login-subtitle {
+    font-size: 14px;
+  }
+
+  .wan-input-field,
+  .wan-login-button {
+    height: 40px !important;
+  }
+}

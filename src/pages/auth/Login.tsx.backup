@@ -1,0 +1,730 @@
+/**
+ * 万象生活登录页面
+ * 高级设计感登录界面，支持手机号/用户名/邮箱登录 + 第三方登录
+ */
+
+import React, { useState, useEffect } from 'react'
+import { Form, Input, Button, Typography, Checkbox, Alert, Divider, Space, Card } from 'antd'
+import { WanXiangIcon } from '@/components/icons'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAppDispatch } from '@/store'
+import { login } from '@/store/slices/authSlice'
+import './Login.css'
+
+const { Title, Text } = Typography
+
+interface LoginFormData {
+  identifier: string // 手机号/用户名/邮箱
+  password: string
+  remember: boolean
+}
+
+const Login: React.FC = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [formData, setFormData] = useState<LoginFormData>({
+    identifier: '',
+    password: '',
+    remember: false
+  })
+
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+
+  // 背景动画效果
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const time = Date.now() / 1000
+      const root = document.documentElement
+      root.style.setProperty('--animation-time', time.toString())
+    }, 50)
+    return () => clearInterval(interval)
+  }, [])
+
+  const handleAccountLogin = async (values: LoginFormData) => {
+    setLoading(true)
+    setError('')
+
+    try {
+      // 模拟API调用
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
+
+      const data = await response.json()
+
+      if (data.success || true) { // 临时模拟成功
+        // 存储用户信息和token
+        dispatch(login({
+          user: {
+            id: 1,
+            username: values.identifier,
+            email: 'admin@wanxiang.com',
+            role: 'admin'
+          },
+          token: 'mock_token_' + Date.now(),
+        }))
+
+        // 如果选择记住密码，存储到localStorage
+        if (values.remember) {
+          localStorage.setItem('auth_token', data.token || 'mock_token')
+          localStorage.setItem('user_info', JSON.stringify(data.user || {
+            id: 1,
+            username: values.identifier,
+            email: 'admin@wanxiang.com',
+            role: 'admin'
+          }))
+        }
+
+        navigate('/dashboard')
+      } else {
+        setError(data.error || '登录失败，请重试')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      // 临时允许直接登录进行测试
+      dispatch(login({
+        user: {
+          id: 1,
+          username: values.identifier || 'admin',
+          email: 'admin@wanxiang.com',
+          role: 'admin'
+        },
+        token: 'mock_token_' + Date.now(),
+      }))
+      navigate('/dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleThirdPartyLogin = (platform: string) => {
+    console.log(`使用 ${platform} 登录`)
+    // TODO: 集成第三方登录SDK
+    setError('第三方登录功能开发中...')
+  }
+
+  return (
+    <div className="wan-login-page">
+      {/* 动态背景 */}
+      <div className="wan-login-background">
+        <div className="wan-bg-shape wan-bg-shape-1"></div>
+        <div className="wan-bg-shape wan-bg-shape-2"></div>
+        <div className="wan-bg-shape wan-bg-shape-3"></div>
+        <div className="wan-bg-shape wan-bg-shape-4"></div>
+      </div>
+
+      {/* 登录容器 */}
+      <div className="wan-login-container">
+        <Card className="wan-login-card wan-glass-card">
+          {/* 头部品牌区域 */}
+          <div className="wan-login-header">
+            <div className="wan-brand-logo">
+              <div className="wan-logo-container">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none" className="wan-logo-svg">
+                  <circle cx="30" cy="30" r="28" stroke="url(#brand-gradient)" strokeWidth="4" strokeDasharray="8 4" strokeDashoffset="var(--animation-time, 0)"/>
+                  <path d="M30 18v12l8 6" stroke="url(#brand-gradient)" strokeWidth="3" strokeLinecap="round"/>
+                  <circle cx="30" cy="30" r="3" fill="url(#brand-gradient)"/>
+                  <defs>
+                    <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#667eea"/>
+                      <stop offset="50%" stopColor="#ff6b6b"/>
+                      <stop offset="100%" stopColor="#feca57"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+
+            <div className="wan-brand-text">
+              <Title level={2} className="wan-login-title">
+                万象生活
+              </Title>
+              <Text className="wan-login-subtitle">
+                智慧管理，精彩生活
+              </Text>
+            </div>
+          </div>
+
+          {/* 错误提示 */}
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              className="wan-login-error"
+              closable
+              onClose={() => setError('')}
+            />
+          )}
+
+          {/* 登录表单 */}
+          <Form
+            name="login"
+            initialValues={formData}
+            onFinish={handleAccountLogin}
+            layout="vertical"
+            size="large"
+            className="wan-login-form"
+          >
+            <Form.Item
+              name="identifier"
+              label={<span className="wan-form-label">账号</span>}
+              rules={[
+                { required: true, message: '请输入手机号/用户名/邮箱!' },
+                { min: 3, message: '账号至少3个字符!' }
+              ]}
+            >
+              <Input
+                prefix={<WanXiangIcon type="User" color="#8b5cf6" />}
+                placeholder="手机号/用户名/邮箱"
+                value={formData.identifier}
+                onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+                className="wan-input-field"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label={<span className="wan-form-label">密码</span>}
+              rules={[
+                { required: true, message: '请输入密码!' },
+                { min: 6, message: '密码至少6个字符!' }
+              ]}
+            >
+              <Input.Password
+                prefix={<WanXiangIcon type="Settings" color="#8b5cf6" />}
+                placeholder="密码"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="wan-input-field"
+              />
+            </Form.Item>
+
+            <div className="wan-login-options">
+              <Form.Item name="remember" valuePropName="checked" noStyle>
+                <Checkbox className="wan-checkbox">记住我</Checkbox>
+              </Form.Item>
+              <Link to="/forgot-password" className="wan-forgot-link">
+                忘记密码？
+              </Link>
+            </div>
+
+            <Form.Item className="wan-submit-item">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                className="wan-login-button"
+              >
+                {loading ? '登录中...' : '立即登录'}
+              </Button>
+            </Form.Item>
+          </Form>
+
+          {/* 分隔线 */}
+          <div className="wan-divider-wrapper">
+            <Divider className="wan-divider">
+              <span className="wan-divider-text">或使用以下方式登录</span>
+            </Divider>
+          </div>
+
+          {/* 第三方登录 */}
+          <div className="wan-social-login">
+            <Space size="middle" className="wan-social-buttons">
+              <Button
+                className="wan-social-btn wan-wechat-btn"
+                onClick={() => handleThirdPartyLogin('微信')}
+                icon={<WanXiangIcon type="Wechat" />}
+              >
+                微信
+              </Button>
+              <Button
+                className="wan-social-btn wan-qq-btn"
+                onClick={() => handleThirdPartyLogin('QQ')}
+                icon={<WanXiangIcon type="QQ" />}
+              >
+                QQ
+              </Button>
+              <Button
+                className="wan-social-btn wan-alipay-btn"
+                onClick={() => handleThirdPartyLogin('支付宝')}
+                icon={<WanXiangIcon type="Alipay" />}
+              >
+                支付宝
+              </Button>
+            </Space>
+          </div>
+
+          {/* 注册链接 */}
+          <div className="wan-register-section">
+            <Text className="wan-register-text">
+              还没有账号？
+              <Link to="/register" className="wan-register-link">
+                立即注册
+              </Link>
+            </Text>
+          </div>
+        </Card>
+      </div>
+
+          {/* 高级样式 */}
+      <style jsx global>{`
+        /* 登录页面容器 */
+        .wan-login-page {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff6b6b 100%);
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        /* 动态背景形状 */
+        .wan-login-background {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          overflow: hidden;
+        }
+
+        .wan-bg-shape {
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(20px);
+          animation: float 20s infinite ease-in-out;
+        }
+
+        .wan-bg-shape-1 {
+          width: 300px;
+          height: 300px;
+          top: -150px;
+          left: -150px;
+          animation-delay: 0s;
+        }
+
+        .wan-bg-shape-2 {
+          width: 200px;
+          height: 200px;
+          top: 50%;
+          right: -100px;
+          animation-delay: 5s;
+        }
+
+        .wan-bg-shape-3 {
+          width: 150px;
+          height: 150px;
+          bottom: -75px;
+          left: 30%;
+          animation-delay: 10s;
+        }
+
+        .wan-bg-shape-4 {
+          width: 250px;
+          height: 250px;
+          top: 20%;
+          left: 60%;
+          animation-delay: 15s;
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.7;
+          }
+          33% {
+            transform: translateY(-30px) rotate(120deg);
+            opacity: 0.9;
+          }
+          66% {
+            transform: translateY(30px) rotate(240deg);
+            opacity: 0.5;
+          }
+        }
+
+        /* 登录容器 */
+        .wan-login-container {
+          position: relative;
+          z-index: 10;
+          width: 100%;
+          max-width: 440px;
+        }
+
+        /* 登录卡片 */
+        .wan-login-card {
+          border-radius: 24px !important;
+          border: none !important;
+          box-shadow:
+            0 32px 64px rgba(0, 0, 0, 0.1),
+            0 16px 32px rgba(0, 0, 0, 0.08),
+            0 8px 16px rgba(0, 0, 0, 0.06) !important;
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
+          background: rgba(255, 255, 255, 0.95) !important;
+          overflow: hidden;
+          transition: all 0.3s ease;
+        }
+
+        .wan-login-card:hover {
+          transform: translateY(-8px);
+          box-shadow:
+            0 40px 80px rgba(0, 0, 0, 0.15),
+            0 20px 40px rgba(0, 0, 0, 0.12),
+            0 10px 20px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* 头部品牌区域 */
+        .wan-login-header {
+          text-align: center;
+          margin-bottom: 40px;
+          padding-top: 20px;
+        }
+
+        .wan-brand-logo {
+          margin-bottom: 24px;
+        }
+
+        .wan-logo-container {
+          display: inline-block;
+          position: relative;
+        }
+
+        .wan-logo-svg {
+          filter: drop-shadow(0 8px 16px rgba(102, 126, 234, 0.3));
+          animation: pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.05);
+            opacity: 0.9;
+          }
+        }
+
+        .wan-brand-text {
+          text-align: center;
+        }
+
+        .wan-login-title {
+          margin-bottom: 8px !important;
+          background: linear-gradient(135deg, #667eea, #ff6b6b);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-weight: 700 !important;
+          font-size: 32px !important;
+          letter-spacing: -0.5px;
+        }
+
+        .wan-login-subtitle {
+          color: #6b7280;
+          font-size: 16px;
+          font-weight: 400;
+        }
+
+        /* 表单样式 */
+        .wan-login-form {
+          margin-bottom: 32px;
+        }
+
+        .wan-form-label {
+          color: #374151;
+          font-weight: 600;
+          font-size: 14px;
+        }
+
+        .wan-input-field {
+          height: 56px !important;
+          border-radius: 16px !important;
+          border: 2px solid #f3f4f6 !important;
+          background: #fafafa !important;
+          transition: all 0.3s ease !important;
+          font-size: 16px !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        .wan-input-field:hover {
+          border-color: #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        .wan-input-field:focus,
+        .wan-input-field:focus-within {
+          border-color: #8b5cf6 !important;
+          background: #ffffff !important;
+          box-shadow:
+            0 0 0 4px rgba(139, 92, 246, 0.1),
+            0 4px 16px rgba(0, 0, 0, 0.08) !important;
+          transform: translateY(-2px);
+        }
+
+        /* 选项区域 */
+        .wan-login-options {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+        }
+
+        .wan-checkbox {
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        .wan-checkbox:hover {
+          color: #374151;
+        }
+
+        .wan-forgot-link {
+          color: #8b5cf6;
+          text-decoration: none;
+          font-weight: 500;
+          transition: all 0.3s ease;
+        }
+
+        .wan-forgot-link:hover {
+          color: #7c3aed;
+          text-decoration: underline;
+        }
+
+        /* 提交按钮 */
+        .wan-submit-item {
+          margin-bottom: 16px;
+        }
+
+        .wan-login-button {
+          width: 100% !important;
+          height: 56px !important;
+          border-radius: 16px !important;
+          border: none !important;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+          font-size: 18px !important;
+          font-weight: 600 !important;
+          color: white !important;
+          box-shadow:
+            0 8px 24px rgba(139, 92, 246, 0.3),
+            0 4px 12px rgba(139, 92, 246, 0.2) !important;
+          transition: all 0.3s ease !important;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .wan-login-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.6s ease;
+        }
+
+        .wan-login-button:hover::before {
+          left: 100%;
+        }
+
+        .wan-login-button:hover {
+          transform: translateY(-4px) scale(1.02);
+          box-shadow:
+            0 12px 32px rgba(139, 92, 246, 0.4),
+            0 6px 16px rgba(139, 92, 246, 0.3) !important;
+          background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+        }
+
+        .wan-login-button:active {
+          transform: translateY(-2px) scale(1.01);
+        }
+
+        /* 分隔线 */
+        .wan-divider-wrapper {
+          margin: 32px 0 24px;
+        }
+
+        .wan-divider {
+          border-color: #e5e7eb !important;
+          border-style: dashed !important;
+        }
+
+        .wan-divider-text {
+          color: #9ca3af;
+          font-size: 14px;
+          padding: 0 20px;
+          background: rgba(255, 255, 255, 0.95);
+          font-weight: 500;
+        }
+
+        /* 社交登录 */
+        .wan-social-login {
+          margin-bottom: 32px;
+        }
+
+        .wan-social-buttons {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .wan-social-btn {
+          height: 48px !important;
+          border-radius: 16px !important;
+          border: 2px solid #f3f4f6 !important;
+          background: #ffffff !important;
+          color: #6b7280 !important;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+          transition: all 0.3s ease !important;
+        }
+
+        .wan-social-btn:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+        }
+
+        .wan-wechat-btn:hover {
+          border-color: #07c160 !important;
+          color: #07c160 !important;
+          background: rgba(7, 193, 96, 0.05) !important;
+        }
+
+        .wan-qq-btn:hover {
+          border-color: #12b7f5 !important;
+          color: #12b7f5 !important;
+          background: rgba(18, 183, 245, 0.05) !important;
+        }
+
+        .wan-alipay-btn:hover {
+          border-color: #1677ff !important;
+          color: #1677ff !important;
+          background: rgba(22, 119, 255, 0.05) !important;
+        }
+
+        /* 注册区域 */
+        .wan-register-section {
+          text-align: center;
+          padding-bottom: 20px;
+        }
+
+        .wan-register-text {
+          color: #6b7280;
+          font-size: 15px;
+        }
+
+        .wan-register-link {
+          color: #8b5cf6;
+          text-decoration: none;
+          font-weight: 600;
+          margin-left: 6px;
+          transition: all 0.3s ease;
+        }
+
+        .wan-register-link:hover {
+          color: #7c3aed;
+          text-decoration: underline;
+        }
+
+        /* 错误提示 */
+        .wan-login-error {
+          margin-bottom: 24px;
+          border-radius: 12px !important;
+          border: none !important;
+          background: rgba(239, 68, 68, 0.1) !important;
+          color: #dc2626 !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+          .wan-login-page {
+            padding: 16px;
+          }
+
+          .wan-login-container {
+            max-width: 100%;
+          }
+
+          .wan-login-card {
+            border-radius: 20px !important;
+            margin: 0 -8px;
+          }
+
+          .wan-login-header {
+            margin-bottom: 32px;
+            padding-top: 16px;
+          }
+
+          .wan-login-title {
+            font-size: 28px !important;
+          }
+
+          .wan-input-field,
+          .wan-login-button {
+            height: 52px !important;
+          }
+
+          .wan-login-options {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+          }
+
+          .wan-social-buttons {
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .wan-social-btn {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .wan-bg-shape {
+            opacity: 0.5;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .wan-login-page {
+            padding: 12px;
+          }
+
+          .wan-login-header {
+            margin-bottom: 24px;
+          }
+
+          .wan-login-title {
+            font-size: 24px !important;
+          }
+
+          .wan-login-subtitle {
+            font-size: 14px;
+          }
+
+          .wan-input-field,
+          .wan-login-button {
+            height: 48px !important;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+export default Login

@@ -1,0 +1,87 @@
+# 开发环境Docker Compose配置
+# 用于快速启动Socket.IO聊天系统进行测试
+
+version: '3.8'
+
+services:
+  # Socket.IO服务器
+  socketio-server:
+    build:
+      context: ./socket-server
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - HOST=0.0.0.0
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URL=mongodb://mongodb:27017/socketio
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+    depends_on:
+      - redis
+      - mongodb
+    volumes:
+      - ./socket-server:/app
+      - /app/node_modules
+    networks:
+      - socketio-network
+    restart: unless-stopped
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - socketio-network
+    restart: unless-stopped
+
+  # MongoDB数据库
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_DATABASE=socketio
+    volumes:
+      - mongodb_data:/data/db
+      - ./socket-server/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - socketio-network
+    restart: unless-stopped
+
+  # 前端开发服务器 (可选，也可以本地运行)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_SOCKET_URL=http://localhost:3001
+      - VITE_API_BASE_URL=http://localhost:3001/api
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - socketio-network
+    restart: unless-stopped
+    profiles:
+      - frontend
+
+volumes:
+  redis_data:
+    driver: local
+  mongodb_data:
+    driver: local
+
+networks:
+  socketio-network:
+    driver: bridge

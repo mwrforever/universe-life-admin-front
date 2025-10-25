@@ -1,0 +1,2361 @@
+openapi: 3.0.3
+info:
+  title: 万象生活后台管理端 API
+  description: 企业级任务管理平台后台管理系统API
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@wanxiang-life.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.wanxiang-life.com/v1
+    description: Production server
+  - url: https://staging-api.wanxiang-life.com/v1
+    description: Staging server
+  - url: http://localhost:3001/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: 认证和授权相关接口
+  - name: Users
+    description: 用户管理接口
+  - name: Tasks
+    description: 任务管理接口
+  - name: Payments
+    description: 支付和交易接口
+  - name: Chat
+    description: 聊天和消息接口
+  - name: Reports
+    description: 报表和分析接口
+  - name: AI-Service
+    description: AI智能客服接口
+  - name: Admin
+    description: 系统管理接口
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 用户登录
+      description: 用户使用用户名和密码登录系统
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: 用户登出
+      description: 用户退出登录，使token失效
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: 刷新token
+      description: 使用refresh token获取新的access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: 获取用户列表
+      description: 分页获取用户列表，支持筛选和搜索
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: role
+          in: query
+          description: 用户角色筛选
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: status
+          in: query
+          description: 用户状态筛选
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - name: verificationLevel
+          in: query
+          description: 认证等级筛选
+          schema:
+            $ref: '#/components/schemas/VerificationLevel'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersListResponse'
+
+    post:
+      tags:
+        - Users
+      summary: 创建用户
+      description: 创建新用户（管理员功能）
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: 获取用户详情
+      description: 根据用户ID获取用户详细信息
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Users
+      summary: 更新用户信息
+      description: 更新用户基本信息
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Users
+      summary: 删除用户
+      description: 删除用户（管理员功能）
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '204':
+          description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: 获取任务列表
+      description: 分页获取任务列表，支持多条件筛选
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: status
+          in: query
+          description: 任务状态筛选
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TaskStatus'
+        - name: category
+          in: query
+          description: 任务分类筛选
+          schema:
+            $ref: '#/components/schemas/TaskCategory'
+        - name: priority
+          in: query
+          description: 任务优先级筛选
+          schema:
+            $ref: '#/components/schemas/TaskPriority'
+        - name: merchantId
+          in: query
+          description: 商家ID筛选
+          schema:
+            type: string
+            format: uuid
+        - name: workerId
+          in: query
+          description: 接单用户ID筛选
+          schema:
+            type: string
+            format: uuid
+        - name: dateFrom
+          in: query
+          description: 开始日期筛选
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: 结束日期筛选
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksListResponse'
+
+    post:
+      tags:
+        - Tasks
+      summary: 创建任务
+      description: 商家发布新任务
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /tasks/{taskId}:
+    get:
+      tags:
+        - Tasks
+      summary: 获取任务详情
+      description: 根据任务ID获取任务详细信息
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Tasks
+      summary: 更新任务
+      description: 更新任务信息
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /tasks/{taskId}/assign:
+    post:
+      tags:
+        - Tasks
+      summary: 接单
+      description: 用户接受任务
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: 接单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /tasks/{taskId}/complete:
+    post:
+      tags:
+        - Tasks
+      summary: 完成任务
+      description: 用户标记任务为已完成
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                completionNotes:
+                  type: string
+                  description: 完成说明
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: 附件ID列表
+      responses:
+        '200':
+          description: 提交成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /tasks/{taskId}/confirm:
+    post:
+      tags:
+        - Tasks
+      summary: 确认完成
+      description: 商家确认任务完成并触发佣金发放
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  description: 评分
+                feedback:
+                  type: string
+                  description: 反馈意见
+      responses:
+        '200':
+          description: 确认成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+
+  /payments:
+    get:
+      tags:
+        - Payments
+      summary: 获取支付记录
+      description: 分页获取支付记录
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: 支付状态筛选
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - name: type
+          in: query
+          description: 支付类型筛选
+          schema:
+            $ref: '#/components/schemas/PaymentType'
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentsListResponse'
+
+    post:
+      tags:
+        - Payments
+      summary: 创建支付
+      description: 创建支付记录（托管佣金）
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /payments/{paymentId}/refund:
+    post:
+      tags:
+        - Payments
+      summary: 申请退款
+      description: 申请支付退款
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PaymentIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+      responses:
+        '200':
+          description: 申请成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /chat/chats:
+    get:
+      tags:
+        - Chat
+      summary: 获取聊天列表
+      description: 获取用户的聊天列表
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: type
+          in: query
+          description: 聊天类型筛选
+          schema:
+            $ref: '#/components/schemas/ChatType'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatsListResponse'
+
+    post:
+      tags:
+        - Chat
+      summary: 创建聊天
+      description: 创建新的聊天会话
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+
+  /chat/chats/{chatId}/messages:
+    get:
+      tags:
+        - Chat
+      summary: 获取聊天消息
+      description: 分页获取聊天消息记录
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ChatIdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: before
+          in: query
+          description: 获取指定时间之前的消息
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesListResponse'
+
+    post:
+      tags:
+        - Chat
+      summary: 发送消息
+      description: 在聊天中发送消息
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ChatIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: 发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /reports:
+    get:
+      tags:
+        - Reports
+      summary: 获取报表列表
+      description: 获取报表模板列表
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: category
+          in: query
+          description: 报表分类筛选
+          schema:
+            $ref: '#/components/schemas/ReportCategory'
+        - name: type
+          in: query
+          description: 报表类型筛选
+          schema:
+            $ref: '#/components/schemas/ReportType'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportsListResponse'
+
+    post:
+      tags:
+        - Reports
+      summary: 创建报表
+      description: 创建新的报表模板
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  /reports/{reportId}/generate:
+    post:
+      tags:
+        - Reports
+      summary: 生成报表
+      description: 根据模板生成报表数据
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ReportIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: object
+                  description: 筛选条件
+                dateRange:
+                  $ref: '#/components/schemas/DateRange'
+      responses:
+        '200':
+          description: 生成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDataResponse'
+
+  /ai-service/sessions:
+    post:
+      tags:
+        - AI-Service
+      summary: 创建AI客服会话
+      description: 开启新的AI客服会话
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAISessionRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISessionResponse'
+
+  /ai-service/sessions/{sessionId}/messages:
+    post:
+      tags:
+        - AI-Service
+      summary: 发送AI消息
+      description: 向AI客服发送消息
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendAIMessageRequest'
+      responses:
+        '201':
+          description: 发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIMessageResponse'
+
+  /admin/system/stats:
+    get:
+      tags:
+        - Admin
+      summary: 系统统计
+      description: 获取系统整体统计数据
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatsResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      description: 用户ID
+      schema:
+        type: string
+        format: uuid
+
+    TaskIdParam:
+      name: taskId
+      in: path
+      required: true
+      description: 任务ID
+      schema:
+        type: string
+        format: uuid
+
+    ChatIdParam:
+      name: chatId
+      in: path
+      required: true
+      description: 聊天ID
+      schema:
+        type: string
+        format: uuid
+
+    PaymentIdParam:
+      name: paymentId
+      in: path
+      required: true
+      description: 支付ID
+      schema:
+        type: string
+        format: uuid
+
+    ReportIdParam:
+      name: reportId
+      in: path
+      required: true
+      description: 报表ID
+      schema:
+        type: string
+        format: uuid
+
+    SessionIdParam:
+      name: sessionId
+      in: path
+      required: true
+      description: 会话ID
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      description: 页码
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      description: 每页数量
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    SearchParam:
+      name: search
+      in: query
+      description: 搜索关键词
+      schema:
+        type: string
+        maxLength: 100
+
+  schemas:
+    # 基础响应模型
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: 操作成功
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: '#/components/schemas/ApiError'
+
+    ApiError:
+      type: object
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: 请求参数验证失败
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
+        hasNext:
+          type: boolean
+          example: true
+        hasPrev:
+          type: boolean
+          example: false
+
+    # 用户相关模型
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        phone:
+          type: string
+          example: "13800138000"
+        gender:
+          $ref: '#/components/schemas/UserGender'
+        age:
+          type: integer
+          minimum: 18
+          maximum: 100
+          example: 25
+        address:
+          type: string
+          example: "北京市朝阳区"
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        verificationLevel:
+          $ref: '#/components/schemas/VerificationLevel'
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        rating:
+          $ref: '#/components/schemas/UserRating'
+        bankAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankAccount'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    UserGender:
+      type: string
+      enum: [male, female, other]
+      example: "male"
+
+    UserRole:
+      type: string
+      enum: [admin, merchant, worker]
+      example: "merchant"
+
+    UserStatus:
+      type: string
+      enum: [active, inactive, suspended, pending_verification]
+      example: "active"
+
+    VerificationLevel:
+      type: string
+      enum: [basic, verified, premium, enterprise]
+      example: "verified"
+
+    UserStatistics:
+      type: object
+      properties:
+        perfectTasksCount:
+          type: integer
+          example: 15
+        normalTasksCount:
+          type: integer
+          example: 8
+        overtimeTasksCount:
+          type: integer
+          example: 2
+        incompleteTasksCount:
+          type: integer
+          example: 1
+        totalTasksTaken:
+          type: integer
+          example: 26
+        totalEarnings:
+          type: number
+          format: decimal
+          example: 15000.00
+        successRate:
+          type: number
+          format: decimal
+          example: 0.96
+
+    UserRating:
+      type: object
+      properties:
+        averageRating:
+          type: number
+          format: decimal
+          minimum: 1
+          maximum: 5
+          example: 4.8
+        totalRatings:
+          type: integer
+          example: 20
+        ratingDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            "5": 15
+            "4": 3
+            "3": 2
+
+    BankAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [wechat, alipay, bank]
+          example: "alipay"
+        accountNumber:
+          type: string
+          example: "13800138000"
+        accountName:
+          type: string
+          example: "张三"
+        isDefault:
+          type: boolean
+          example: true
+        isVerified:
+          type: boolean
+          example: true
+
+    # 认证相关模型
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: 用户名或邮箱
+          example: "john_doe"
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "password123"
+        rememberMe:
+          type: boolean
+          default: false
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            token:
+              type: string
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            refreshToken:
+              type: string
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            expiresIn:
+              type: integer
+              example: 3600
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            expiresIn:
+              type: integer
+              example: 3600
+
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - email
+        - phone
+        - role
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          example: "new_user"
+        email:
+          type: string
+          format: email
+          example: "newuser@example.com"
+        phone:
+          type: string
+          pattern: "^1[3-9]\\d{9}$"
+          example: "13900139000"
+        gender:
+          $ref: '#/components/schemas/UserGender'
+        age:
+          type: integer
+          minimum: 18
+          maximum: 100
+          example: 25
+        address:
+          type: string
+          maxLength: 200
+          example: "上海市浦东新区"
+        bio:
+          type: string
+          maxLength: 500
+          nullable: true
+        role:
+          $ref: '#/components/schemas/UserRole'
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "password123"
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          pattern: "^1[3-9]\\d{9}$"
+        gender:
+          $ref: '#/components/schemas/UserGender'
+        age:
+          type: integer
+          minimum: 18
+          maximum: 100
+        address:
+          type: string
+          maxLength: 200
+        bio:
+          type: string
+          maxLength: 500
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        verificationLevel:
+          $ref: '#/components/schemas/VerificationLevel'
+
+    # 任务相关模型
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+          example: "网站设计任务"
+        description:
+          type: string
+          maxLength: 500
+          example: "需要设计一个企业官网"
+        content:
+          type: string
+          minLength: 20
+          example: "详细的任务要求和说明..."
+        commission:
+          type: number
+          format: decimal
+          minimum: 1
+          example: 1000.00
+        deadline:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        category:
+          $ref: '#/components/schemas/TaskCategory'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        merchantId:
+          type: string
+          format: uuid
+        merchant:
+          $ref: '#/components/schemas/User'
+        workerId:
+          type: string
+          format: uuid
+          nullable: true
+        worker:
+          $ref: '#/components/schemas/User'
+          nullable: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskAttachment'
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRequirement'
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskTimeline'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        assignedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TaskStatus:
+      type: string
+      enum: [draft, published, assigned, in_progress, submitted, confirmed, cancelled, disputed]
+      example: "published"
+
+    TaskCategory:
+      type: string
+      enum: [delivery, consulting, design, development, writing, translation, customer_service, other]
+      example: "design"
+
+    TaskPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+      example: "normal"
+
+    TaskAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+          example: "requirements.pdf"
+        originalName:
+          type: string
+          example: "项目需求文档.pdf"
+        mimeType:
+          type: string
+          example: "application/pdf"
+        size:
+          type: integer
+          example: 1024000
+        url:
+          type: string
+          format: uri
+        uploadedBy:
+          type: string
+          format: uuid
+        uploadedAt:
+          type: string
+          format: date-time
+
+    TaskRequirement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          minLength: 5
+          example: "需要提供设计案例"
+        type:
+          type: string
+          enum: [text, file, selection]
+          example: "file"
+        isRequired:
+          type: boolean
+          example: true
+        options:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    TaskTimeline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [created, published, assigned, started, submitted, confirmed, cancelled]
+          example: "published"
+        description:
+          type: string
+          example: "任务已发布"
+        userId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+        - description
+        - content
+        - commission
+        - deadline
+        - category
+        - priority
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        content:
+          type: string
+          minLength: 20
+        commission:
+          type: number
+          format: decimal
+          minimum: 1
+        deadline:
+          type: string
+          format: date-time
+        category:
+          $ref: '#/components/schemas/TaskCategory'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRequirement'
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        content:
+          type: string
+          minLength: 20
+        commission:
+          type: number
+          format: decimal
+          minimum: 1
+        deadline:
+          type: string
+          format: date-time
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRequirement'
+
+    # 支付相关模型
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        taskId:
+          type: string
+          format: uuid
+        task:
+          $ref: '#/components/schemas/Task'
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        type:
+          $ref: '#/components/schemas/PaymentType'
+        method:
+          type: string
+          enum: [wechat, alipay, bank, balance]
+          example: "alipay"
+        merchantId:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+          nullable: true
+        transactionId:
+          type: string
+          nullable: true
+        platformFee:
+          type: number
+          format: decimal
+          nullable: true
+        escrowReleasedAt:
+          type: string
+          format: date-time
+          nullable: true
+        refundedAt:
+          type: string
+          format: date-time
+          nullable: true
+        refundReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    PaymentStatus:
+      type: string
+      enum: [pending, processing, completed, failed, refunded, escrow]
+      example: "pending"
+
+    PaymentType:
+      type: string
+      enum: [task_commission, platform_fee, refund, penalty, bonus]
+      example: "task_commission"
+
+    CreatePaymentRequest:
+      type: object
+      required:
+        - taskId
+        - amount
+        - method
+      properties:
+        taskId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+          minimum: 1
+        method:
+          type: string
+          enum: [wechat, alipay, bank, balance]
+
+    RefundRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+          example: "任务未按要求完成"
+        evidence:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    # 聊天相关模型
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/ChatType'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatParticipant'
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+        task:
+          $ref: '#/components/schemas/Task'
+          nullable: true
+        lastMessage:
+          $ref: '#/components/schemas/Message'
+          nullable: true
+        unreadCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ChatType:
+      type: string
+      enum: [private, group, task_chat]
+      example: "task_chat"
+
+    ChatParticipant:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        user:
+          $ref: '#/components/schemas/User'
+        role:
+          type: string
+          enum: [admin, member, guest]
+          example: "member"
+        joinedAt:
+          type: string
+          format: date-time
+        lastReadAt:
+          type: string
+          format: date-time
+          nullable: true
+        isOnline:
+          type: boolean
+          example: true
+        lastSeenAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        chatId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        type:
+          type: string
+          enum: [text, image, file, system, voice]
+          example: "text"
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageAttachment'
+          nullable: true
+        replyToId:
+          type: string
+          format: uuid
+          nullable: true
+        isEdited:
+          type: boolean
+          example: false
+        editedAt:
+          type: string
+          format: date-time
+          nullable: true
+        isDeleted:
+          type: boolean
+          example: false
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        readReceipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageReadReceipt'
+        createdAt:
+          type: string
+          format: date-time
+
+    MessageAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+          nullable: true
+
+    MessageReadReceipt:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        readAt:
+          type: string
+          format: date-time
+
+    CreateChatRequest:
+      type: object
+      required:
+        - participantIds
+      properties:
+        participantIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        type:
+          $ref: '#/components/schemas/ChatType'
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+
+    SendMessageRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        type:
+          type: string
+          enum: [text, image, file, voice]
+          default: text
+        replyToId:
+          type: string
+          format: uuid
+          nullable: true
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    # 报表相关模型
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        type:
+          $ref: '#/components/schemas/ReportType'
+        category:
+          $ref: '#/components/schemas/ReportCategory'
+        config:
+          $ref: '#/components/schemas/ReportConfig'
+        template:
+          $ref: '#/components/schemas/ReportTemplate'
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportFilter'
+        schedule:
+          $ref: '#/components/schemas/ReportSchedule'
+          nullable: true
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportPermission'
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastGeneratedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReportType:
+      type: string
+      enum: [user_analytics, task_analytics, financial_report, performance_report, custom_report]
+      example: "task_analytics"
+
+    ReportCategory:
+      type: string
+      enum: [users, tasks, payments, chat, system]
+      example: "tasks"
+
+    ReportTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        layout:
+          type: object
+        charts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartConfig'
+        dataSource:
+          $ref: '#/components/schemas/DataSource'
+        format:
+          type: string
+          enum: [json, csv, excel, pdf]
+
+    ChartConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [line, bar, pie, area, scatter]
+        title:
+          type: string
+        dataSource:
+          type: string
+        xAxis:
+          type: object
+        yAxis:
+          type: object
+        series:
+          type: array
+          items:
+            type: object
+        styling:
+          type: object
+
+    DataSource:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [api, database, file]
+        endpoint:
+          type: string
+        query:
+          type: string
+        refreshInterval:
+          type: integer
+          nullable: true
+        parameters:
+          type: object
+          additionalProperties: true
+
+    ReportFilter:
+      type: object
+      properties:
+        field:
+          type: string
+        operator:
+          type: string
+          enum: [eq, ne, gt, gte, lt, lte, in, like]
+        value:
+          type: object
+        label:
+          type: string
+
+    ReportSchedule:
+      type: object
+      properties:
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        time:
+          type: string
+          pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+        recipients:
+          type: array
+          items:
+            type: string
+            format: email
+        enabled:
+          type: boolean
+          default: true
+
+    ReportPermission:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        roleId:
+          type: string
+          format: uuid
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [view, edit, delete, share]
+
+    CreateReportRequest:
+      type: object
+      required:
+        - name
+        - type
+        - category
+        - template
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        type:
+          $ref: '#/components/schemas/ReportType'
+        category:
+          $ref: '#/components/schemas/ReportCategory'
+        template:
+          $ref: '#/components/schemas/ReportTemplate'
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportFilter'
+        schedule:
+          $ref: '#/components/schemas/ReportSchedule'
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportPermission'
+
+    DateRange:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+
+    # AI客服相关模型
+    AISession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIMessage'
+        context:
+          $ref: '#/components/schemas/ServiceContext'
+        satisfaction:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        resolved:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SessionStatus:
+      type: string
+      enum: [active, waiting, escalated, closed]
+      example: "active"
+
+    AIMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        sender:
+          type: string
+          enum: [user, ai, human_agent]
+          example: "ai"
+        content:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [text, system]
+          default: text
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        suggestions:
+          type: array
+          items:
+            type: string
+          nullable: true
+        escalatedToHuman:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+
+    ServiceContext:
+      type: object
+      properties:
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+        previousIssues:
+          type: array
+          items:
+            type: string
+        userTier:
+          type: string
+          example: "premium"
+        language:
+          type: string
+          default: "zh-CN"
+        preferences:
+          type: object
+          additionalProperties: true
+
+    CreateAISessionRequest:
+      type: object
+      properties:
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+        issue:
+          type: string
+          maxLength: 500
+          example: "任务进度咨询"
+        priority:
+          type: string
+          enum: [low, normal, high]
+          default: normal
+
+    SendAIMessageRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        type:
+          type: string
+          enum: [text]
+          default: text
+
+    # 系统统计模型
+    SystemStats:
+      type: object
+      properties:
+        users:
+          type: object
+          properties:
+            total:
+              type: integer
+            active:
+              type: integer
+            newThisMonth:
+              type: integer
+        tasks:
+          type: object
+          properties:
+            total:
+              type: integer
+            published:
+              type: integer
+            completed:
+              type: integer
+            inProgress:
+              type: integer
+        payments:
+          type: object
+          properties:
+            totalAmount:
+              type: number
+              format: decimal
+            thisMonth:
+              type: number
+              format: decimal
+            platformFees:
+              type: number
+              format: decimal
+        system:
+          type: object
+          properties:
+            uptime:
+              type: number
+              format: decimal
+            activeConnections:
+              type: integer
+            avgResponseTime:
+              type: number
+              format: decimal
+
+    # 列表响应模型
+    UsersListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    TasksListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaymentsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ChatsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chat'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    MessagesListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ReportsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # 单个资源响应模型
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+
+    TaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Task'
+
+    PaymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Payment'
+
+    ChatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Chat'
+
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Message'
+
+    ReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Report'
+
+    ReportDataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            reportData:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            generatedAt:
+              type: string
+              format: date-time
+            expiresAt:
+              type: string
+              format: date-time
+
+    AISessionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/AISession'
+
+    AIMessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/AIMessage'
+
+    SystemStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SystemStats'
+
+  responses:
+    UnauthorizedError:
+      description: 认证失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: 认证失败，请重新登录
+              timestamp: "2023-01-01T00:00:00Z"
+
+    ValidationError:
+      description: 请求参数验证失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: 请求参数验证失败
+              details:
+                username: ["用户名不能为空"]
+                email: ["邮箱格式不正确"]
+              timestamp: "2023-01-01T00:00:00Z"
+
+    NotFoundError:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: 请求的资源不存在
+              timestamp: "2023-01-01T00:00:00Z"
+
+    ForbiddenError:
+      description: 权限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: FORBIDDEN
+              message: 权限不足，无法访问该资源
+              timestamp: "2023-01-01T00:00:00Z"
+
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: INTERNAL_ERROR
+              message: 服务器内部错误，请稍后重试
+              timestamp: "2023-01-01T00:00:00Z"

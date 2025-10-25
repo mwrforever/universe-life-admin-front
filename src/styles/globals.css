@@ -1,0 +1,225 @@
+/* 万象生活全局样式 */
+:root {
+  /* 主色系 */
+  --wan-primary-50: #f0f2ff;
+  --wan-primary-100: #e0e5ff;
+  --wan-primary-200: #c7d2fe;
+  --wan-primary-300: #a5b4fc;
+  --wan-primary-400: #818cf8;
+  --wan-primary-500: #6366f1;
+  --wan-primary-600: #4f46e5;
+  --wan-primary-700: #4338ca;
+  --wan-primary-800: #3730a3;
+  --wan-primary-900: #312e81;
+  --wan-primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  /* 温暖生活色 */
+  --wan-warm-orange: #ff9a76;
+  --wan-warm-pink: #ffc3c0;
+  --wan-warm-yellow: #fff4db;
+  --wan-warm-green: #d1fae5;
+  --wan-warm-purple: #e9d5ff;
+
+  /* 文本色 */
+  --wan-text-primary: #333333;
+  --wan-text-secondary: #666666;
+  --wan-text-tertiary: #999999;
+  --wan-text-white: #ffffff;
+
+  /* 背景色 */
+  --wan-bg-primary: #ffffff;
+  --wan-bg-secondary: #fafafa;
+  --wan-bg-tertiary: #f5f5f5;
+  --wan-bg-glass: rgba(255, 255, 255, 0.8);
+  --wan-bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* 阴影 */
+  --wan-shadow-small: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --wan-shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --wan-shadow-large: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --wan-shadow-glass: 0 8px 32px rgba(31, 38, 135, 0.37);
+
+  /* 圆角 */
+  --wan-radius-small: 4px;
+  --wan-radius-medium: 8px;
+  --wan-radius-large: 12px;
+  --wan-radius-xl: 16px;
+  --wan-radius-full: 50%;
+
+  /* 间距 */
+  --wan-spacing-xs: 4px;
+  --wan-spacing-sm: 8px;
+  --wan-spacing-md: 16px;
+  --wan-spacing-lg: 24px;
+  --wan-spacing-xl: 32px;
+  --wan-spacing-xxl: 48px;
+
+  /* 动画 */
+  --wan-transition-fast: 0.15s ease-in-out;
+  --wan-transition-normal: 0.3s ease-in-out;
+  --wan-transition-slow: 0.5s ease-in-out;
+}
+
+/* 基础重置 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol';
+  font-size: 14px;
+  line-height: 1.5715;
+  color: var(--wan-text-primary);
+  background-color: var(--wan-bg-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--wan-bg-tertiary);
+  border-radius: var(--wan-radius-small);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--wan-primary-300);
+  border-radius: var(--wan-radius-small);
+  transition: background var(--wan-transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--wan-primary-400);
+}
+
+/* 通用工具类 */
+.wan-gradient-bg {
+  background: var(--wan-primary-gradient);
+}
+
+.wan-glass-bg {
+  background: var(--wan-bg-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.wan-shadow-small {
+  box-shadow: var(--wan-shadow-small);
+}
+
+.wan-shadow-medium {
+  box-shadow: var(--wan-shadow-medium);
+}
+
+.wan-shadow-large {
+  box-shadow: var(--wan-shadow-large);
+}
+
+.wan-shadow-glass {
+  box-shadow: var(--wan-shadow-glass);
+}
+
+.wan-radius-small {
+  border-radius: var(--wan-radius-small);
+}
+
+.wan-radius-medium {
+  border-radius: var(--wan-radius-medium);
+}
+
+.wan-radius-large {
+  border-radius: var(--wan-radius-large);
+}
+
+.wan-radius-xl {
+  border-radius: var(--wan-radius-xl);
+}
+
+.wan-radius-full {
+  border-radius: var(--wan-radius-full);
+}
+
+/* 文本工具类 */
+.wan-text-primary {
+  color: var(--wan-text-primary);
+}
+
+.wan-text-secondary {
+  color: var(--wan-text-secondary);
+}
+
+.wan-text-tertiary {
+  color: var(--wan-text-tertiary);
+}
+
+.wan-text-white {
+  color: var(--wan-text-white);
+}
+
+/* 动画类 */
+.wan-transition {
+  transition: all var(--wan-transition-normal);
+}
+
+.wan-scale-hover:hover {
+  transform: scale(1.05);
+}
+
+.wan-shadow-hover:hover {
+  box-shadow: var(--wan-shadow-large);
+}
+
+/* 毛玻璃卡片 */
+.wan-glass-card {
+  background: var(--wan-bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--wan-radius-large);
+  box-shadow: var(--wan-shadow-glass);
+}
+
+/* 渐变文字 */
+.wan-gradient-text {
+  background: var(--wan-primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* 生活化色彩背景 */
+.wan-warm-bg-orange {
+  background-color: var(--wan-warm-orange);
+}
+
+.wan-warm-bg-pink {
+  background-color: var(--wan-warm-pink);
+}
+
+.wan-warm-bg-yellow {
+  background-color: var(--wan-warm-yellow);
+}
+
+.wan-warm-bg-green {
+  background-color: var(--wan-warm-green);
+}
+
+.wan-warm-bg-purple {
+  background-color: var(--wan-warm-purple);
+}

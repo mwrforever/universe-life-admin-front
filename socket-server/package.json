@@ -1,0 +1,89 @@
+{
+  "name": "wanxiang-life-socket-server",
+  "version": "2.0.0",
+  "description": "High-performance Socket.IO server for Wanxiang Life real-time communication",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "nodemon --exec tsx src/server.ts",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:load": "artillery run load-test.yml",
+    "docker:build": "docker build -t wanxiang-socket-server .",
+    "docker:run": "docker-compose up -d",
+    "lint": "eslint src --ext .js,.ts",
+    "lint:fix": "eslint src --ext .js,.ts --fix",
+    "format": "prettier --write \"src/**/*.{js,ts,json}\"",
+    "type-check": "tsc --noEmit",
+    "cluster:start": "node src/cluster.js",
+    "pm2:start": "pm2 start ecosystem.config.js"
+  },
+  "keywords": [
+    "socket.io",
+    "websocket",
+    "real-time",
+    "wanxiang-life",
+    "high-concurrency",
+    "microservices",
+    "nodejs",
+    "typescript"
+  ],
+  "author": "Wanxiang Life Team",
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "bcryptjs": "^2.4.3",
+    "cluster": "^0.7.7",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.1.0",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.4.2",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.20.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^10.0.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.4",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@vitest/coverage-v8": "^4.0.2",
+    "artillery": "^2.0.26",
+    "eslint": "^9.38.0",
+    "nodemon": "^3.1.9",
+    "pm2": "^5.4.2",
+    "prettier": "^3.4.2",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wanxiang-life/socket-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wanxiang-life/socket-server/issues"
+  },
+  "homepage": "https://github.com/wanxiang-life/socket-server#readme"
+}

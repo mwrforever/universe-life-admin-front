@@ -1,0 +1,385 @@
+/**
+ * 全局搜索组件样式 - 下拉框形式
+ * 搜索框下方显示建议下拉框，包含本系统相关内容
+ */
+
+/* 主容器 */
+.global-search-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* 搜索输入框容器 */
+.search-input-container {
+  width: 100%;
+}
+
+/* 导航栏中的搜索输入框 */
+.global-search-input {
+  width: 100% !important;
+  height: 40px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: #f5f7fa !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  padding: 0 16px !important;
+  color: #262626 !important;
+}
+
+.global-search-input .ant-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: #262626 !important;
+  font-size: 14px !important;
+}
+
+.global-search-input::placeholder {
+  color: #a6a6a6 !important;
+}
+
+/* Hover状态 */
+.global-search-input:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* Focus状态 */
+.global-search-input:focus,
+.global-search-input.ant-input-focused {
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.15) !important;
+  background: #f5f7fa !important;
+  transform: none;
+}
+
+.global-search-input:focus .ant-input,
+.global-search-input.ant-input-focused .ant-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #262626 !important;
+}
+
+/* 搜索图标 */
+.global-search-input .ant-input-prefix {
+  color: #bfbfbf !important;
+  font-size: 16px !important;
+  transition: color 0.3s ease !important;
+}
+
+.global-search-input:focus .ant-input-prefix,
+.global-search-input.ant-input-focused .ant-input-prefix {
+  color: #096dd9 !important;
+}
+
+/* 清空按钮 */
+.global-search-input .ant-input-suffix .anticon {
+  color: #bfbfbf !important;
+  font-size: 12px !important;
+  transition: color 0.3s ease !important;
+}
+
+.global-search-input .ant-input-suffix .anticon:hover {
+  color: #1890ff !important;
+}
+
+/* 搜索建议下拉框 */
+.search-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  min-width: 100%;
+  max-width: 600px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top center;
+}
+
+/* 搜索标题 */
+.search-section-title {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+/* 建议列表 */
+.search-suggestions {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* 建议项 */
+.search-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  gap: 12px;
+}
+
+.search-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.search-suggestion-item:hover,
+.search-suggestion-item.selected {
+  background-color: #f5f9ff;
+}
+
+/* 建议项图标 */
+.suggestion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 16px;
+  color: #6b7280;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* 建议项内容 */
+.suggestion-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 面包屑导航 */
+.suggestion-breadcrumb {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+/* 建议项标题 */
+.suggestion-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+/* 建议项描述 */
+.suggestion-description {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* 加载状态 */
+.search-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* 空状态 */
+.search-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* 动画 */
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 滚动条 */
+.search-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-suggestions::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.search-suggestions::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.search-suggestions::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 暗色模式 */
+[data-theme="dark"] .global-search-input {
+  background: #262626 !important;
+  color: #bfbfbf !important;
+}
+
+[data-theme="dark"] .global-search-input .ant-input {
+  color: #bfbfbf !important;
+}
+
+[data-theme="dark"] .global-search-input::placeholder {
+  color: #8c8c8c !important;
+}
+
+[data-theme="dark"] .global-search-input:hover {
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .global-search-input:focus,
+[data-theme="dark"] .global-search-input.ant-input-focused {
+  box-shadow: 0 0 0 2px rgba(105, 177, 255, 0.15) !important;
+  background: #262626 !important;
+}
+
+[data-theme="dark"] .global-search-input:focus .ant-input,
+[data-theme="dark"] .global-search-input.ant-input-focused .ant-input {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .global-search-input .ant-input-prefix {
+  color: #8c8c8c !important;
+}
+
+[data-theme="dark"] .global-search-input:focus .ant-input-prefix,
+[data-theme="dark"] .global-search-input.ant-input-focused .ant-input-prefix {
+  color: #69b1ff !important;
+}
+
+[data-theme="dark"] .global-search-input .ant-input-suffix .anticon {
+  color: #8c8c8c !important;
+}
+
+[data-theme="dark"] .global-search-input .ant-input-suffix .anticon:hover {
+  color: #69b1ff !important;
+}
+
+[data-theme="dark"] .search-suggestions-dropdown {
+  background: #1f1f1f;
+  border-color: #434343;
+}
+
+[data-theme="dark"] .search-section-title {
+  background: #262626;
+  color: #bfbfbf;
+  border-bottom-color: #434343;
+}
+
+[data-theme="dark"] .search-suggestion-item:hover,
+[data-theme="dark"] .search-suggestion-item.selected {
+  background-color: #262626;
+}
+
+[data-theme="dark"] .search-suggestion-item {
+  border-bottom-color: #434343;
+}
+
+[data-theme="dark"] .suggestion-icon {
+  color: #8c8c8c;
+}
+
+[data-theme="dark"] .suggestion-breadcrumb {
+  color: #8c8c8c;
+}
+
+[data-theme="dark"] .suggestion-title {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .suggestion-description {
+  color: #8c8c8c;
+}
+
+[data-theme="dark"] .search-loading,
+[data-theme="dark"] .search-empty {
+  color: #8c8c8c;
+}
+
+[data-theme="dark"] .search-suggestions::-webkit-scrollbar-track {
+  background: #262626;
+}
+
+[data-theme="dark"] .search-suggestions::-webkit-scrollbar-thumb {
+  background: #434343;
+}
+
+[data-theme="dark"] .search-suggestions::-webkit-scrollbar-thumb:hover {
+  background: #595959;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .global-search-dropdown {
+    max-width: 280px;
+    padding: 0 8px;
+  }
+
+  .search-suggestions-dropdown {
+    max-width: 100%;
+  }
+
+  .suggestion-title {
+    font-size: 14px;
+  }
+
+  .suggestion-description {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .global-search-dropdown {
+    display: none; /* 移动端隐藏搜索框 */
+  }
+}
+
+@media (min-width: 1200px) {
+  .global-search-dropdown {
+    max-width: 360px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .global-search-dropdown {
+    max-width: 400px;
+  }
+}
+
+/* 确保在各种Ant Design主题下都能正常工作 */
+.ant-layout .global-search-input {
+  border: none !important;
+  background: #f5f7fa !important;
+}
+
+.ant-layout[data-theme="dark"] .global-search-input {
+  background: #262626 !important;
+}
