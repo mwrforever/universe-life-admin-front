@@ -21,6 +21,8 @@ import {
   WechatOutlined,
   QqOutlined,
   AlipayOutlined,
+  QuestionCircleOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons'
 
 interface WanXiangIconProps {
@@ -50,15 +52,20 @@ const WanXiangIcon: React.FC<WanXiangIconProps> = ({ type, size = 16, color }) =
     Wechat: <WechatOutlined />,
     QQ: <QqOutlined />,
     Alipay: <AlipayOutlined />,
+    Question: <QuestionCircleOutlined />,
+    Help: <QuestionCircleOutlined />,
+    Logout: <LogoutOutlined />,
   }
 
   const icon = iconMap[type] || <SettingOutlined />
 
-  return React.cloneElement(icon, {
-    style: {
-      fontSize: size,
-      color,
-    },
+  const iconStyle: React.CSSProperties = {
+    fontSize: size,
+    color,
+  }
+
+  return React.cloneElement(icon as React.ReactElement<any>, {
+    style: iconStyle,
   })
 }
 

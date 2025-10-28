@@ -67,7 +67,7 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
   const messageCacheRef = useRef<Map<string, any[]>>(new Map());
 
   // 重连状态
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const maxReconnectDelay = reconnectionDelayMax;
 
   /**

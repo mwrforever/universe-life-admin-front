@@ -1,6 +1,13 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
+// 扩展全局类型
+declare global {
+  var ResizeObserver: any
+  var IntersectionObserver: any
+  var WebSocket: any
+}
+
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

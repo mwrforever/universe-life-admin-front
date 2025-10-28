@@ -2,9 +2,11 @@
  * 主题上下文 - 管理全局主题状态
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { ConfigProvider } from 'antd'
 import { getThemeConfig } from '../styles/theme'
+import { performThemeSwitch, getCurrentTheme } from '../utils/themeUtils'
 
 // 主题类型定义
 export type ThemeMode = 'light' | 'dark'
@@ -24,15 +26,14 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const savedTheme = localStorage.getItem('theme-mode') as ThemeMode | null
-    return savedTheme || 'light'
+    return getCurrentTheme()
   })
 
   const isDark = themeMode === 'dark'
 
   useEffect(() => {
-    localStorage.setItem('theme-mode', themeMode)
-    document.documentElement.setAttribute('data-theme', themeMode)
+    // 使用优化的主题切换函数
+    performThemeSwitch(themeMode)
   }, [themeMode])
 
   const toggleTheme = () => {

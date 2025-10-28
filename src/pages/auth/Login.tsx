@@ -66,7 +66,7 @@ const Login: React.FC = () => {
             email: 'admin@wanxiang.com',
             role: 'admin'
           },
-          token: 'mock_token_' + Date.now(),
+          token: `mock_token_${  Date.now()}`,
         }))
 
         // 如果选择记住密码，存储到localStorage
@@ -94,7 +94,7 @@ const Login: React.FC = () => {
           email: 'admin@wanxiang.com',
           role: 'admin'
         },
-        token: 'mock_token_' + Date.now(),
+        token: `mock_token_${  Date.now()}`,
       }))
       navigate('/dashboard')
     } finally {

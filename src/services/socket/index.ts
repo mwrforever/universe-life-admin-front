@@ -1,5 +1,6 @@
 // Export socket client
-export { default as socketClient } from './client'
+import socketClient from './client'
+export { socketClient }
 export type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -35,10 +36,10 @@ export const socketUtils = {
   /**
    * Format message for display
    */
-  formatMessage(message: any): any {
+  formatMessage(message: Record<string, unknown>): Record<string, unknown> {
     return {
       ...message,
-      createdAt: new Date(message.createdAt),
+      createdAt: new Date(message.createdAt as string),
       isOwn: message.senderId === this.getCurrentUserId(),
     }
   },
@@ -59,7 +60,7 @@ export const socketUtils = {
    * Generate unique ID for temporary messages
    */
   generateTempId(): string {
-    return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `temp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   },
 
   /**
@@ -73,7 +74,7 @@ export const socketUtils = {
    * Truncate message if too long
    */
   truncateMessage(content: string, maxLength: number = 100): string {
-    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
+    return content.length > maxLength ? `${content.substring(0, maxLength)}...` : content
   },
 
   /**
@@ -86,7 +87,7 @@ export const socketUtils = {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
 
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
   },
 
   /**

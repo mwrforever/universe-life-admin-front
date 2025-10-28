@@ -10,15 +10,15 @@ export interface User {
   address: string
   avatar?: string
   bio?: string
-  verificationLevel: VerificationLevel
+  verificationLevel: VerificationLevelType
   statistics: UserStatistics
   rating: UserRating
   bankAccounts: BankAccount[]
   createdAt: Date
   updatedAt: Date
   lastLoginAt?: Date
-  status: UserStatus
-  role: UserRole
+  status: UserStatusType
+  role: UserRoleType
 }
 
 export interface UserStatistics {
@@ -53,7 +53,7 @@ export const VerificationLevel = {
   ENTERPRISE: 'enterprise'
 } as const
 
-export type VerificationLevel = typeof VerificationLevel[keyof typeof VerificationLevel]
+export type VerificationLevelType = typeof VerificationLevel[keyof typeof VerificationLevel]
 
 export const UserStatus = {
   ACTIVE: 'active',
@@ -62,7 +62,7 @@ export const UserStatus = {
   PENDING_VERIFICATION: 'pending_verification'
 } as const
 
-export type UserStatus = typeof UserStatus[keyof typeof UserStatus]
+export type UserStatusType = typeof UserStatus[keyof typeof UserStatus]
 
 export const UserRole = {
   ADMIN: 'admin',
@@ -70,7 +70,7 @@ export const UserRole = {
   WORKER: 'worker'
 } as const
 
-export type UserRole = typeof UserRole[keyof typeof UserRole]
+export type UserRoleType = typeof UserRole[keyof typeof UserRole]
 
 export interface AuthState {
   user: User | null
@@ -149,7 +149,7 @@ export interface RefreshTokenResponse {
 export interface JwtPayload {
   sub: string
   username: string
-  role: UserRole
+  role: UserRoleType
   iat: number
   exp: number
   iss: string
@@ -164,7 +164,7 @@ export interface AuthError {
 }
 
 // Role-based permissions
-export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+export const ROLE_PERMISSIONS: Record<UserRoleType, string[]> = {
   [UserRole.ADMIN]: [
     'users:read', 'users:write', 'users:delete',
     'tasks:read', 'tasks:write', 'tasks:delete',
@@ -191,7 +191,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
 }
 
 // Utility functions
-export const hasPermission = (userRole: UserRole, permission: string): boolean => {
+export const hasPermission = (userRole: UserRoleType, permission: string): boolean => {
   return ROLE_PERMISSIONS[userRole]?.includes(permission) || false
 }
 

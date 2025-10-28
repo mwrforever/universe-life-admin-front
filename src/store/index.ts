@@ -39,7 +39,7 @@ export const store = configureStore({
         ignoredPaths: ['chat.socket'],
       },
     }),
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: import.meta.env.NODE_ENV !== 'production',
 })
 
 // 导出类型

@@ -3,6 +3,7 @@
  */
 
 import { theme } from 'antd'
+import type { ThemeConfig } from 'antd'
 
 // 主题类型定义
 export type ThemeMode = 'light' | 'dark'
@@ -35,7 +36,7 @@ export const designTokens = {
 }
 
 // 浅色主题配置
-export const lightTheme = {
+export const lightTheme: ThemeConfig = {
   algorithm: theme.defaultAlgorithm,
   token: {
     colorPrimary: designTokens.colorPrimary,
@@ -99,7 +100,7 @@ export const lightTheme = {
 }
 
 // 深色主题配置
-export const darkTheme = {
+export const darkTheme: ThemeConfig = {
   algorithm: theme.darkAlgorithm,
   token: {
     colorPrimary: designTokens.colorPrimary,

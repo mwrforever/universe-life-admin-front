@@ -174,7 +174,7 @@ class SocketClient {
   private reconnectDelay = 1000
   private isConnecting = false
   private isManualDisconnect = false
-  private heartbeatInterval: NodeJS.Timeout | null = null
+  private heartbeatInterval: number | null = null
 
   constructor() {
     this.setupOfflineListener()

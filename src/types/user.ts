@@ -5,9 +5,9 @@ import type {
   User,
   UserStatistics,
   UserRating,
-  VerificationLevel,
-  UserStatus,
-  UserRole,
+  VerificationLevelType,
+  UserStatusType,
+  UserRoleType,
 } from './auth'
 import {
   UserStatus as UserStatusEnum,
@@ -21,9 +21,9 @@ export type {
   UserStatistics,
   UserRating,
   BankAccount,
-  VerificationLevel,
-  UserStatus,
-  UserRole,
+  VerificationLevelType,
+  UserStatusType,
+  UserRoleType,
 } from './auth'
 
 // User management specific types
@@ -37,9 +37,9 @@ export interface UsersState {
 }
 
 export interface UserFilters {
-  role?: UserRole
-  status?: UserStatus
-  verificationLevel?: VerificationLevel
+  role?: UserRoleType
+  status?: UserStatusType
+  verificationLevel?: VerificationLevelType
   dateRange?: DateRange
   search?: string
   sortBy?: 'createdAt' | 'lastLoginAt' | 'username' | 'successRate'
@@ -94,18 +94,18 @@ export interface CreateUserByAdminData {
   email: string
   phone: string
   password: string
-  role: UserRole
+  role: UserRoleType
   gender: 'male' | 'female' | 'other'
   age: number
   address: string
-  verificationLevel?: VerificationLevel
+  verificationLevel?: VerificationLevelType
 }
 
 export interface UpdateUserByAdminData {
   id: string
-  status?: UserStatus
-  role?: UserRole
-  verificationLevel?: VerificationLevel
+  status?: UserStatusType
+  role?: UserRoleType
+  verificationLevel?: VerificationLevelType
   statistics?: Partial<UserStatistics>
   rating?: Partial<UserRating>
 }
@@ -124,9 +124,9 @@ export interface UserDetailResponse {
 // User search and filtering
 export interface UserSearchQuery {
   query?: string
-  role?: UserRole
-  status?: UserStatus
-  verificationLevel?: VerificationLevel
+  role?: UserRoleType
+  status?: UserStatusType
+  verificationLevel?: VerificationLevelType
   createdAfter?: string
   createdBefore?: string
   lastLoginAfter?: string
@@ -146,9 +146,9 @@ export interface UserAnalytics {
   newUsersToday: number
   newUsersThisWeek: number
   newUsersThisMonth: number
-  usersByRole: Record<UserRole, number>
-  usersByStatus: Record<UserStatus, number>
-  usersByVerificationLevel: Record<VerificationLevel, number>
+  usersByRole: Record<UserRoleType, number>
+  usersByStatus: Record<UserStatusType, number>
+  usersByVerificationLevel: Record<VerificationLevelType, number>
   topPerformers: User[]
   recentActivity: UserActivity[]
 }
@@ -227,7 +227,7 @@ export const getUserInitials = (user: User): string => {
   return user.email.substring(0, 2).toUpperCase()
 }
 
-export const getUserStatusColor = (status: UserStatus): string => {
+export const getUserStatusColor = (status: UserStatusType): string => {
   switch (status) {
     case UserStatusEnum.ACTIVE:
       return 'green'
@@ -242,7 +242,7 @@ export const getUserStatusColor = (status: UserStatus): string => {
   }
 }
 
-export const getUserRoleColor = (role: UserRole): string => {
+export const getUserRoleColor = (role: UserRoleType): string => {
   switch (role) {
     case UserRoleEnum.ADMIN:
       return 'red'
@@ -255,7 +255,7 @@ export const getUserRoleColor = (role: UserRole): string => {
   }
 }
 
-export const getVerificationLevelColor = (level: VerificationLevel): string => {
+export const getVerificationLevelColor = (level: VerificationLevelType): string => {
   switch (level) {
     case VerificationLevelEnum.BASIC:
       return 'gray'

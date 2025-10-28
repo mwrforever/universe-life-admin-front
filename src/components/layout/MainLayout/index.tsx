@@ -3,10 +3,11 @@
  * 三大块结构：顶部导航栏 + 左侧侧边栏 + 右侧内容区域
  */
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Dropdown, Avatar, Badge, Button, Typography, Tooltip } from 'antd'
+import { Layout, Menu, Avatar, Badge, Button, Typography, Tooltip } from 'antd'
 import { WanXiangIcon } from '@/components/icons'
+import { SearchOutlined } from '@ant-design/icons'
 import { useAppSelector } from '@/store'
 import type { RootState } from '@/store'
 
@@ -23,9 +24,12 @@ interface MenuItem {
 
 const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false)
+  const [userMenuVisible, setUserMenuVisible] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAppSelector((state: RootState) => state.auth)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 菜单配置
   const menuItems: MenuItem[] = [
@@ -95,25 +99,55 @@ const MainLayout: React.FC = () => {
     }
   ]
 
-  // 用户下拉菜单
+  // 用户下拉菜单 - 现代化设计
   const userMenuItems = [
     {
       key: 'profile',
       icon: <WanXiangIcon type="User" />,
-      label: '个人资料',
+      label: (
+        <div>
+          <div style={{ fontWeight: 600 }}>个人资料</div>
+          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+            查看和编辑个人信息
+          </div>
+        </div>
+      ),
     },
     {
       key: 'settings',
       icon: <WanXiangIcon type="Settings" />,
-      label: '账户设置',
+      label: (
+        <div>
+          <div style={{ fontWeight: 600 }}>账户设置</div>
+          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+            密码、偏好、通知设置
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'help',
+      icon: <WanXiangIcon type="Question" />,
+      label: (
+        <div>
+          <div style={{ fontWeight: 600 }}>帮助中心</div>
+          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+            使用指南和技术支持
+          </div>
+        </div>
+      ),
     },
     {
       type: 'divider' as const,
     },
     {
       key: 'logout',
-      icon: <WanXiangIcon type="Settings" />,
-      label: '退出登录',
+      icon: <WanXiangIcon type="Logout" />,
+      label: (
+        <div style={{ color: '#ef4444', fontWeight: 600 }}>
+          退出登录
+        </div>
+      ),
       danger: true,
     },
   ]
@@ -141,12 +175,17 @@ const MainLayout: React.FC = () => {
 
   // 处理用户菜单点击
   const handleUserMenuClick = ({ key }: { key: string }) => {
+    setUserMenuVisible(false)
     switch (key) {
       case 'profile':
         navigate('/profile')
         break
       case 'settings':
         navigate('/settings')
+        break
+      case 'help':
+        // 可以跳转到帮助页面或者打开帮助modal
+        console.log('帮助中心')
         break
       case 'logout':
         // TODO: 实现退出登录逻辑
@@ -156,6 +195,31 @@ const MainLayout: React.FC = () => {
         break
     }
   }
+
+  // 用户菜单鼠标事件处理
+  const handleUserMenuEnter = () => {
+    // 清除之前的延迟关闭
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    setUserMenuVisible(true)
+  }
+
+  const handleUserMenuLeave = () => {
+    // 添加延迟，避免用户误操作
+    timeoutRef.current = setTimeout(() => {
+      setUserMenuVisible(false)
+    }, 150)
+  }
+
+  // 组件卸载时清理定时器
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   // 获取当前选中的菜单项
   const getSelectedKeys = (): string[] => {
@@ -219,6 +283,18 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
 
+        {/* 全局搜索框 - 居中显示 */}
+        <div className="wan-global-search-container">
+          <div className="wan-global-search">
+            <SearchOutlined className="wan-search-icon" />
+            <input
+              type="text"
+              placeholder="搜索用户、订单、任务…"
+              className="wan-search-input"
+            />
+          </div>
+        </div>
+
         <div className="wan-header-right">
           {/* 通知铃铛 */}
           <Tooltip title="通知中心" placement="bottom">
@@ -232,13 +308,11 @@ const MainLayout: React.FC = () => {
           </Tooltip>
 
           {/* 用户信息下拉菜单 */}
-          <Dropdown
-            menu={{
-              items: userMenuItems as any,
-              onClick: handleUserMenuClick,
-            }}
-            placement="bottomRight"
-            trigger={['click']}
+          <div
+            className="wan-user-menu-container"
+            onMouseEnter={handleUserMenuEnter}
+            onMouseLeave={handleUserMenuLeave}
+            ref={userMenuRef}
           >
             <div className="wan-user-info">
               <Avatar
@@ -254,9 +328,46 @@ const MainLayout: React.FC = () => {
                   {user?.role === 'admin' ? '超级管理员' : '普通用户'}
                 </Text>
               </div>
-              <WanXiangIcon type="ArrowDown" size="16" />
+              <WanXiangIcon type="ArrowDown" size={16} className="wan-user-dropdown-arrow" />
             </div>
-          </Dropdown>
+
+            {/* 下拉菜单内容 */}
+            {userMenuVisible && (
+              <div className="wan-user-dropdown-menu">
+                {userMenuItems.map((item) => (
+                  item.type === 'divider' ? (
+                    <div key="divider" className="wan-menu-divider" />
+                  ) : (
+                    <div
+                      key={item.key}
+                      className={`wan-menu-item ${item.danger ? 'wan-menu-item-danger' : ''}`}
+                      onClick={() => handleUserMenuClick({ key: item.key })}
+                    >
+                      <div className="wan-menu-item-icon">
+                        {item.icon}
+                      </div>
+                      <div className="wan-menu-item-content">
+                        {typeof item.label === 'object' && item.key !== 'logout' ? (
+                          <>
+                            <div className="wan-menu-item-title">
+                              {item.label.props.children[0]}
+                            </div>
+                            <div className="wan-menu-item-description">
+                              {item.label.props.children[1].props.children}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="wan-menu-item-title" style={item.danger ? { color: '#ff4d4f' } : {}}>
+                            {typeof item.label === 'object' ? item.label.props.children : item.label}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </Header>
 
@@ -398,6 +509,11 @@ const MainLayout: React.FC = () => {
           color: var(--wan-primary-500);
         }
 
+        .wan-user-menu-container {
+          position: relative;
+          display: inline-block;
+        }
+
         .wan-user-info {
           display: flex;
           align-items: center;
@@ -410,6 +526,101 @@ const MainLayout: React.FC = () => {
 
         .wan-user-info:hover {
           background: var(--wan-neutral-100);
+        }
+
+        .wan-user-dropdown-menu {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          background: #fff;
+          border: 1px solid var(--wan-neutral-200);
+          border-radius: 8px;
+          box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+          min-width: 160px;
+          z-index: 1050;
+          padding: 4px 0;
+          margin-top: 4px;
+          animation: antSlideDown 0.2s ease-out;
+        }
+
+        @keyframes antSlideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .wan-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 5px 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative;
+        }
+
+        .wan-menu-item:hover {
+          background: #f5f5f5;
+        }
+
+        .wan-menu-item-danger:hover {
+          background: #fff2f0;
+        }
+
+        .wan-menu-item-icon {
+          display: flex;
+          align-items: center;
+          color: #8c8c8c;
+          font-size: 14px;
+          width: 14px;
+          height: 14px;
+        }
+
+        .wan-menu-item:hover .wan-menu-item-icon {
+          color: #1890ff;
+        }
+
+        .wan-menu-item-danger:hover .wan-menu-item-icon {
+          color: #ff4d4f;
+        }
+
+        .wan-menu-item-content {
+          flex: 1;
+          line-height: 1.5;
+        }
+
+        .wan-menu-item-title {
+          font-size: 14px;
+          font-weight: 400;
+          color: rgba(0, 0, 0, 0.88);
+          line-height: 1.5;
+        }
+
+        .wan-menu-item-description {
+          font-size: 12px;
+          color: rgba(0, 0, 0, 0.45);
+          line-height: 1.2;
+          margin-top: 2px;
+        }
+
+        .wan-menu-item:hover .wan-menu-item-title {
+          color: rgba(0, 0, 0, 0.88);
+        }
+
+        .wan-menu-item-danger:hover .wan-menu-item-title {
+          color: #ff4d4f;
+        }
+
+        .wan-menu-divider {
+          height: 1px;
+          background: #f0f0f0;
+          margin: 4px 0;
+          padding: 0;
         }
 
         .wan-user-avatar {
@@ -534,10 +745,6 @@ const MainLayout: React.FC = () => {
           .wan-header-right {
             gap: 8px;
             padding-right: 16px;
-          }
-
-          .wan-user-details {
-            display: none;
           }
 
           .wan-content-body {

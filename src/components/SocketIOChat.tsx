@@ -8,7 +8,7 @@
  * - 错误处理
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useSocketIO } from '../hooks/useSocketIO';
 import './SocketIOChat.css';
 
@@ -22,14 +22,6 @@ interface Message {
   timestamp: number;
 }
 
-interface Room {
-  id: string;
-  name: string;
-  memberCount: number;
-  isShard: boolean;
-  shardId?: number;
-}
-
 const SocketIOChat: React.FC = () => {
   const [token, setToken] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,7 +30,6 @@ const SocketIOChat: React.FC = () => {
   const [roomInput, setRoomInput] = useState('');
   const [roomNameInput, setRoomNameInput] = useState('');
   const [showJoinRoom, setShowJoinRoom] = useState(false);
-  const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');

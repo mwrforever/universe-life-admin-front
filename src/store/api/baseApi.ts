@@ -22,7 +22,11 @@ export const baseQuery = fetchBaseQuery({
 })
 
 // Base query with error handling
-export const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
+export const baseQueryWithReauth = async (
+  args: unknown,
+  api: { dispatch: (action: unknown) => void; getState: () => unknown },
+  extraOptions: Record<string, unknown>
+) => {
   let result = await baseQuery(args, api, extraOptions)
 
   // Handle 401 unauthorized errors
