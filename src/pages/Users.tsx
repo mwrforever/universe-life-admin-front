@@ -2,7 +2,7 @@
  * 用户管理页面
  */
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Card, Typography, Table, Tag, Space, Button, Input, Select, Avatar, Row, Col, Statistic, Modal, Form, message } from 'antd'
 import {
   UserOutlined,

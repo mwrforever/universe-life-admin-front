@@ -17,9 +17,19 @@ const { Text } = Typography
 interface MenuItem {
   key: string
   icon: React.ReactNode
-  label: string
+  label: React.ReactNode
   path?: string
   children?: MenuItem[]
+  danger?: boolean
+}
+
+
+interface UserMenuItem {
+  key?: string
+  icon?: React.ReactNode
+  label?: React.ReactNode
+  danger?: boolean
+  type?: 'item' | 'divider'
 }
 
 const MainLayout: React.FC = () => {
@@ -100,7 +110,7 @@ const MainLayout: React.FC = () => {
   ]
 
   // 用户下拉菜单 - 现代化设计
-  const userMenuItems = [
+  const userMenuItems: UserMenuItem[] = [
     {
       key: 'profile',
       icon: <WanXiangIcon type="User" />,
@@ -151,6 +161,15 @@ const MainLayout: React.FC = () => {
       danger: true,
     },
   ]
+
+  // 类型守卫函数
+  const isDivider = (item: UserMenuItem): item is UserMenuItem & { type: 'divider' } => {
+    return item.type === 'divider'
+  }
+
+  const isMenuItem = (item: UserMenuItem): item is UserMenuItem & { key: string; label: React.ReactNode; icon: React.ReactNode } => {
+    return item.type !== 'divider' && item.key !== undefined && item.label !== undefined && item.icon !== undefined
+  }
 
   // 处理菜单点击
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -334,10 +353,10 @@ const MainLayout: React.FC = () => {
             {/* 下拉菜单内容 */}
             {userMenuVisible && (
               <div className="wan-user-dropdown-menu">
-                {userMenuItems.map((item) => (
-                  item.type === 'divider' ? (
-                    <div key="divider" className="wan-menu-divider" />
-                  ) : (
+                {userMenuItems.map((item, index) => (
+                  isDivider(item) ? (
+                    <div key={`divider-${index}`} className="wan-menu-divider" />
+                  ) : isMenuItem(item) ? (
                     <div
                       key={item.key}
                       className={`wan-menu-item ${item.danger ? 'wan-menu-item-danger' : ''}`}
@@ -350,20 +369,20 @@ const MainLayout: React.FC = () => {
                         {typeof item.label === 'object' && item.key !== 'logout' ? (
                           <>
                             <div className="wan-menu-item-title">
-                              {item.label.props.children[0]}
+                              {(item.label as any).props.children[0]}
                             </div>
                             <div className="wan-menu-item-description">
-                              {item.label.props.children[1].props.children}
+                              {(item.label as any).props.children[1]?.props.children}
                             </div>
                           </>
                         ) : (
                           <div className="wan-menu-item-title" style={item.danger ? { color: '#ff4d4f' } : {}}>
-                            {typeof item.label === 'object' ? item.label.props.children : item.label}
+                            {typeof item.label === 'object' ? (item.label as any).props.children : item.label}
                           </div>
                         )}
                       </div>
                     </div>
-                  )
+                  ) : null
                 ))}
               </div>
             )}

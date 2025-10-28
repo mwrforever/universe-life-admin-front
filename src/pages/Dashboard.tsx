@@ -2,18 +2,14 @@
  * 仪表板页面
  */
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Card, Typography, Row, Col, Statistic, Progress, Table, Tag, Space } from 'antd'
 import {
   UserOutlined,
   FileTextOutlined,
   CreditCardOutlined,
   RiseOutlined,
-  TrophyOutlined,
-  EyeOutlined,
   ShoppingOutlined,
-  MessageOutlined,
-  TeamOutlined,
   DollarOutlined
 } from '@ant-design/icons'
 

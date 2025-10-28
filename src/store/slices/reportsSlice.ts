@@ -43,6 +43,18 @@ const reportsSlice = createSlice({
     addReport: (state, action: PayloadAction<Report>) => {
       state.reports.unshift(action.payload)
     },
+    generateReport: (state, action: PayloadAction<Partial<Report>>) => {
+      const newReport: Report = {
+        id: Date.now().toString(),
+        title: action.payload.title || '新报告',
+        type: action.payload.type || 'analytics',
+        status: 'generating',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...action.payload,
+      }
+      state.reports.unshift(newReport)
+    },
     clearError: (state) => {
       state.error = null
     },
@@ -55,6 +67,7 @@ export const {
   setReports,
   setSelectedReport,
   addReport,
+  generateReport,
   clearError,
 } = reportsSlice.actions
 

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react'
 import { Card, Button, Space, Table, Tag, Input, Select, DatePicker, Modal, message, Statistic, Row, Col, Typography } from 'antd'
-import { PlusOutlined, SearchOutlined, EyeOutlined, DownloadOutlined, DollarOutlined } from '@ant-design/icons'
+import { SearchOutlined, EyeOutlined, DownloadOutlined, DollarOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useNavigate } from 'react-router-dom'
 

@@ -29,9 +29,11 @@ interface WanXiangIconProps {
   type: string
   size?: number
   color?: string
+  className?: string
+  style?: React.CSSProperties
 }
 
-const WanXiangIcon: React.FC<WanXiangIconProps> = ({ type, size = 16, color }) => {
+const WanXiangIcon: React.FC<WanXiangIconProps> = ({ type, size = 16, color, className, style }) => {
   const iconMap: Record<string, React.ReactElement> = {
     Home: <HomeOutlined />,
     User: <UserOutlined />,
@@ -62,10 +64,12 @@ const WanXiangIcon: React.FC<WanXiangIconProps> = ({ type, size = 16, color }) =
   const iconStyle: React.CSSProperties = {
     fontSize: size,
     color,
+    ...style,
   }
 
   return React.cloneElement(icon as React.ReactElement<any>, {
     style: iconStyle,
+    className,
   })
 }
 

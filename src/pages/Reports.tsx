@@ -2,12 +2,11 @@
  * 数据报表页面
  */
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Card, Typography, Row, Col, Select, DatePicker, Button, Space, Table, Progress } from 'antd'
 import {
   BarChartOutlined,
   LineChartOutlined,
-  PieChartOutlined,
   DownloadOutlined,
   CalendarOutlined,
   RiseOutlined,

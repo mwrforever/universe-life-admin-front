@@ -2,7 +2,7 @@
  * 聊天管理页面
  */
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Card, Typography, Table, Tag, Space, Button, Input, Select, Row, Col, Statistic, Badge, Avatar } from 'antd'
 import {
   MessageOutlined,
@@ -13,8 +13,7 @@ import {
   PauseCircleOutlined,
   PlayCircleOutlined,
   ClockCircleOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined
+  CheckCircleOutlined
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 

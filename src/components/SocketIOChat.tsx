@@ -74,7 +74,7 @@ const SocketIOChat: React.FC = () => {
       } else {
         setAuthError(data.error || '登录失败');
       }
-    } catch (error) {
+    } catch {
       setAuthError('网络错误，请重试');
     }
   };

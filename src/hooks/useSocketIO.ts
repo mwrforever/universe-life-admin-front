@@ -67,8 +67,9 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
   const messageCacheRef = useRef<Map<string, any[]>>(new Map());
 
   // 重连状态
-  const reconnectTimeoutRef = useRef<number | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const maxReconnectDelay = reconnectionDelayMax;
+  const connectionCountRef = useRef(0);
 
   /**
    * 更新状态
@@ -114,11 +115,12 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
         socket.emit('authenticate', { token });
       }
 
+      connectionCountRef.current += 1;
       updateState({
         connected: true,
         connecting: false,
         error: null,
-        connectionCount: state.connectionCount + 1
+        connectionCount: connectionCountRef.current
       });
     });
 
@@ -161,16 +163,18 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
     });
 
     // 房间事件
-    socket.on('room_joined', (data) => {
+    socket.on('room_joined', (data: any) => {
       console.log('Joined room:', data);
-      updateState(prev => ({
+      setState(prev => ({
+        ...prev,
         rooms: [...prev.rooms.filter(room => room !== data.roomId), data.roomId]
       }));
     });
 
-    socket.on('room_left', (data) => {
+    socket.on('room_left', (data: any) => {
       console.log('Left room:', data);
-      updateState(prev => ({
+      setState(prev => ({
+        ...prev,
         rooms: prev.rooms.filter(room => room !== data.roomId)
       }));
     });
@@ -181,11 +185,12 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
     });
 
     // 消息事件
-    socket.on('new_message', (message) => {
+    socket.on('new_message', (message: any) => {
       console.log('Received message:', message);
 
       // 添加到消息列表
-      updateState(prev => ({
+      setState(prev => ({
+        ...prev,
         messages: [...prev.messages, message]
       }));
 
@@ -225,7 +230,7 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
       });
     });
 
-  }, [reconnection, state.connectionCount, updateState]);
+  }, [reconnection, updateState]);
 
   /**
    * 安排重连
@@ -235,7 +240,7 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
       clearTimeout(reconnectTimeoutRef.current);
     }
 
-    const attempt = state.connectionCount;
+    const attempt = connectionCountRef.current;
     if (attempt >= reconnectionAttempts) {
       updateState({
         error: '已达到最大重连次数，请刷新页面重试'
@@ -256,7 +261,6 @@ export const useSocketIO = (config: SocketConfig = {}): UseSocketIOReturn => {
       connect();
     }, delay);
   }, [
-    state.connectionCount,
     reconnectionAttempts,
     reconnectionDelay,
     maxReconnectDelay,

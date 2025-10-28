@@ -100,8 +100,50 @@ export {
   clearError as clearPaymentsError
 } from './slices/paymentsSlice'
 
-export * from './slices/chatSlice'
-export * from './slices/reportsSlice'
-export * from './slices/aiServiceSlice'
-export * from './slices/uiSlice'
-export * from './slices/notificationsSlice'
+export {
+  setLoading as setChatLoading,
+  setError as setChatError,
+  setMessages,
+  addMessage,
+  updateMessage,
+  removeMessage,
+  clearMessages,
+  setTypingUsers,
+  clearError as clearChatError
+} from './slices/chatSlice'
+
+export {
+  setLoading as setReportsLoading,
+  setError as setReportsError,
+  setReports,
+  setSelectedReport,
+  generateReport,
+  clearError as clearReportsError
+} from './slices/reportsSlice'
+
+export {
+  setLoading as setAIServiceLoading,
+  setError as setAIServiceError,
+  setServices as setAIServices,
+  setSelectedService as setSelectedAIService,
+  addService as addAIService,
+  updateService as updateAIService,
+  clearError as clearAIServiceError
+} from './slices/aiServiceSlice'
+
+export {
+  setTheme,
+  setSidebarCollapsed,
+  addNotification,
+  removeNotification,
+  clearNotifications
+} from './slices/uiSlice'
+
+export {
+  setLoading as setNotificationsLoading,
+  setError as setNotificationsError,
+  setNotifications,
+  markAsRead,
+  markAllAsRead,
+  clearError as clearNotificationsError
+} from './slices/notificationsSlice'

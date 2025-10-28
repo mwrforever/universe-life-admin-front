@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { Card, Button, Typography, Descriptions, Tag, Spin, Space, message, Modal, Timeline } from 'antd'
+import { Card, Button, Typography, Descriptions, Tag, Spin, Space, message, Modal, Timeline, Row, Col } from 'antd'
 import { ArrowLeftOutlined, ExclamationCircleOutlined, DollarOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 

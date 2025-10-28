@@ -136,7 +136,7 @@ function Tasks() {
           </div>
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
             {record.tags.map(tag => (
-              <Tag key={tag} size="small" color="blue">
+              <Tag key={tag} color="blue" style={{ fontSize: '12px' }}>
                 {tag}
               </Tag>
             ))}

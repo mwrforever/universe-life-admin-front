@@ -2,7 +2,7 @@
  * 支付管理页面
  */
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Card, Typography, Table, Tag, Space, Button, Input, Select, DatePicker, Row, Col, Statistic } from 'antd'
 import {
   CreditCardOutlined,

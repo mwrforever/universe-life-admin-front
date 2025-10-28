@@ -62,10 +62,7 @@ export const lightTheme: ThemeConfig = {
     paddingSM: 12,
     paddingXS: 8,
 
-    // 卡片配置
-    cardPadding: 24,
-    cardRadius: designTokens.borderRadius,
-
+    
     // 动画
     motionDurationSlow: '0.3s',
     motionDurationMid: '0.2s',
@@ -86,9 +83,7 @@ export const lightTheme: ThemeConfig = {
       darkItemColor: '#595959',
       darkItemSelectedColor: '#096dd9',
     },
-    Button: {
-      wave: { disabled: false },
-    },
+    Button: {},
     Card: {
       borderRadius: designTokens.borderRadius,
       boxShadow: 'none',
@@ -154,12 +149,10 @@ export const darkTheme: ThemeConfig = {
       darkItemSelectedColor: '#69b1ff',
       darkItemHoverBg: '#262626',
     },
-    Button: {
-      wave: { disabled: false },
-    },
+    Button: {},
     Card: {
       borderRadius: designTokens.borderRadius,
-      backgroundColor: '#1f1f1f',
+      colorBgContainer: '#1f1f1f',
     },
     Table: {
       borderRadius: designTokens.borderRadius,

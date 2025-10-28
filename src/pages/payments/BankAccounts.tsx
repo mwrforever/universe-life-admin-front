@@ -23,7 +23,6 @@ interface BankAccount {
 
 const BankAccounts: React.FC = () => {
   const [accounts, setAccounts] = React.useState<BankAccount[]>([])
-  const [loading, setLoading] = React.useState(false)
   const [modalVisible, setModalVisible] = React.useState(false)
   const [editingAccount, setEditingAccount] = React.useState<BankAccount | null>(null)
   const [form] = Form.useForm()

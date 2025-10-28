@@ -102,6 +102,18 @@ const chatSlice = createSlice({
         }
       }
     },
+    updateMessage: (state, action: PayloadAction<Message>) => {
+      const index = state.messages.findIndex(msg => msg.id === action.payload.id)
+      if (index !== -1) {
+        state.messages[index] = action.payload
+      }
+    },
+    removeMessage: (state, action: PayloadAction<string>) => {
+      state.messages = state.messages.filter(msg => msg.id !== action.payload)
+    },
+    clearMessages: (state) => {
+      state.messages = []
+    },
     setOnlineUsers: (state, action: PayloadAction<string[]>) => {
       state.onlineUsers = action.payload
     },
@@ -148,6 +160,9 @@ export const {
   removeRoom,
   setMessages,
   addMessage,
+  updateMessage,
+  removeMessage,
+  clearMessages,
   setOnlineUsers,
   addUserOnline,
   removeUserOnline,

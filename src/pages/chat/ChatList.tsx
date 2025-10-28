@@ -103,7 +103,7 @@ const ChatList: React.FC = () => {
                   </Text>
                   <div style={{ marginTop: '8px' }}>
                     {room.tags.map(tag => (
-                      <Tag key={tag} size="small" style={{ marginRight: '4px' }}>
+                      <Tag key={tag} style={{ marginRight: '4px', fontSize: '12px' }}>
                         {tag}
                       </Tag>
                     ))}
