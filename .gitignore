@@ -30,3 +30,7 @@ dist-ssr
 .claude
 .specify
 CLAUDE.md
+.bmad-core/
+.claude/commands/BMad/
+docs/
+
