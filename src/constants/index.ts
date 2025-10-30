@@ -2,8 +2,8 @@
 export const APP_CONFIG = {
   NAME: import.meta.env.VITE_APP_NAME || '万象生活管理端',
   VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050/v1',
-  SOCKET_URL: import.meta.env.VITE_SOCKET_URL || 'http://localhost:5050',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
+  SOCKET_URL: import.meta.env.VITE_SOCKET_URL || 'ws://localhost:5001',
 } as const
 
 // API endpoints
