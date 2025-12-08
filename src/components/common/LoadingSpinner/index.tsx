@@ -1,6 +1,6 @@
 import React from 'react'
 import { Spin } from 'antd'
-import { useTheme } from '../../../context/ThemeContext'
+import { useTheme } from '@/context/ThemeContext.tsx'
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'default' | 'large'

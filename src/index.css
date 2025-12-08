@@ -78,7 +78,7 @@ body {
   /* 使用 Design Token 变量，严禁硬编码颜色 */
   background-color: var(--universe-bg-layout);
   color: var(--universe-text);
-  font-family: var(--universe-font-family);
+    font-family: var(--universe-font-family), serif;
   font-size: 1rem;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -119,7 +119,7 @@ code,
 kbd,
 samp,
 pre {
-  font-family: var(--universe-font-family-code);
+    font-family: var(--universe-font-family-code), serif;
   font-size: 0.875em;
   line-height: 1.5;
 }
@@ -176,7 +176,7 @@ pre code {
 input,
 textarea,
 select {
-  font-family: var(--universe-font-family);
+    font-family: var(--universe-font-family), serif;
   font-size: 1rem;
   line-height: 1.5;
 }
@@ -296,7 +296,7 @@ select:focus-visible {
 }
 
 /* 高对比度模式支持 */
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   :root {
     --universe-border: rgba(0, 0, 0, 0.2);
   }
