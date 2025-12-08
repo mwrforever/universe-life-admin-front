@@ -48,7 +48,11 @@ export default [
       // JavaScript/TypeScript rules
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_'
+      }],
       '@typescript-eslint/no-explicit-any': 'warn',
 
       // React rules
@@ -95,6 +99,30 @@ export default [
       'no-var': 'error',
       'object-shorthand': 'error',
       'prefer-template': 'error',
+    },
+  },
+  // 覆盖特定文件的规则
+  {
+    files: ['src/context/**/*', 'src/provider/**/*'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  // 覆盖types文件的规则 - 允许导出的枚举和类型
+  {
+    files: ['src/types/**/*'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  // 覆盖data文件的规则 - 允许导出的枚举和常量
+  {
+    files: ['src/data/**/*'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'react-refresh/only-export-components': 'off',
     },
   },
 ]
