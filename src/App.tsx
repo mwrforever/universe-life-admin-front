@@ -13,19 +13,20 @@ import React, { useState } from 'react'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { ThemeProvider } from './context/ThemeContext'
-import { ProBasicLayout } from './components/layout/ProBasicLayout'
+import ProBasicLayout from './components/layout/ProBasicLayout'
 import Dashboard from './pages/Dashboard'
-import UserManagement from './pages/Users'
+import UserManagement from './pages/UserManagement'
 // import TradeOrderCenter from './pages/TradeOrders'
 import './App.css'
 
 // 页面映射类型
-type PageKey = 'dashboard' | 'users' | 'orders'
+type PageKey = 'dashboard' | 'users' | 'user-list' | 'orders' | 'settings'
 
 // 页面组件映射
 const pageComponents: Record<PageKey, React.ComponentType> = {
   dashboard: Dashboard,
   users: UserManagement,
+  'user-list': UserManagement,
   // orders: TradeOrderCenter,
 } as Record<PageKey, React.ComponentType>
 
