@@ -33,4 +33,7 @@ CLAUDE.md
 .bmad-core/
 .claude/commands/BMad/
 docs/
+.playwright-mcp
+.windsurf
+nul
 
