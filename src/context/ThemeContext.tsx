@@ -8,7 +8,8 @@
  * @version 1.0.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { ConfigProvider, theme } from 'antd';
 
 // 主题模式枚举
@@ -32,14 +33,26 @@ interface UniverseTheme {
     colorText?: string;
     colorTextSecondary?: string;
     colorTextTertiary?: string;
+    colorTextQuaternary?: string;
     colorBorder?: string;
+    colorBorderSecondary?: string;
     borderRadius?: number;
     borderRadiusLG?: number;
     borderRadiusSM?: number;
     controlHeight?: number;
+    controlHeightLG?: number;
+    controlHeightSM?: number;
+    padding?: number;
+    paddingLG?: number;
+    paddingSM?: number;
+    paddingXS?: number;
     fontFamily?: string;
     fontFamilyCode?: string;
     boxShadow?: string;
+    boxShadowSecondary?: string;
+    motionDurationSlow?: string;
+    motionDurationMid?: string;
+    motionDurationFast?: string;
   };
   components?: Record<string, unknown>;
 }
@@ -57,6 +70,7 @@ interface ChartColors {
 
 interface ThemeContextType {
   isDarkMode: boolean;
+  themeMode: string;
   toggleTheme: () => void;
   setTheme: (_dark: boolean) => void;
   theme: UniverseTheme;
@@ -110,30 +124,30 @@ const defaultLightTheme: UniverseTheme = {
       controlHeight: 40,
       borderRadius: 6,
       fontWeight: 500,
-    },
+    } as Record<string, unknown>,
     Input: {
       controlHeight: 40,
       borderRadius: 6,
       paddingInline: 16,
-    },
+    } as Record<string, unknown>,
     Card: {
       borderRadius: 8,
       paddingLG: 24,
-    },
+    } as Record<string, unknown>,
     Menu: {
       borderRadius: 6,
       itemBorderRadius: 4,
-    },
+    } as Record<string, unknown>,
     Table: {
       borderRadius: 6,
       headerBg: 'rgba(91, 80, 255, 0.02)',
-    },
+    } as Record<string, unknown>,
     Modal: {
       borderRadius: 12,
-    },
+    } as Record<string, unknown>,
     Drawer: {
       borderRadius: 0,
-    },
+    } as Record<string, unknown>,
   },
 };
 
@@ -166,24 +180,24 @@ const _darkTheme: UniverseTheme = {
     boxShadowSecondary: '0 2px 8px rgba(0, 0, 0, 0.15)',
   },
   components: {
-    ...defaultLightTheme.components,
+    ...(defaultLightTheme.components || {}),
     Button: {
-      ...defaultLightTheme.components?.Button,
+      ...(defaultLightTheme.components?.Button as Record<string, unknown> || {}),
       colorBgContainer: '#1f1f1f',
-    },
+    } as Record<string, unknown>,
     Input: {
-      ...defaultLightTheme.components?.Input,
+      ...(defaultLightTheme.components?.Input as Record<string, unknown> || {}),
       colorBgContainer: '#1f1f1f',
-    },
+    } as Record<string, unknown>,
     Card: {
-      ...defaultLightTheme.components?.Card,
+      ...(defaultLightTheme.components?.Card as Record<string, unknown> || {}),
       colorBgContainer: '#141414',
-    },
+    } as Record<string, unknown>,
     Table: {
-      ...defaultLightTheme.components?.Table,
+      ...(defaultLightTheme.components?.Table as Record<string, unknown> || {}),
       headerBg: 'rgba(91, 80, 255, 0.08)',
       colorBgContainer: '#141414',
-    },
+    } as Record<string, unknown>,
   },
 };
 
@@ -328,6 +342,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const value: ThemeContextType = {
     isDarkMode,
+    themeMode: isDarkMode ? 'dark' : 'light',
     toggleTheme,
     setTheme,
     theme: getCurrentTheme(),

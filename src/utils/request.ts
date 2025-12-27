@@ -22,7 +22,7 @@ const onTokenRefreshed = (token: string) => {
 };
 
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8101',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

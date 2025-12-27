@@ -57,7 +57,7 @@ const UserAvatar = styled(Avatar)<{ status?: 'online' | 'offline' | 'frozen' }>`
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid ${props => props.theme?.token?.colorBgContainer || '#fff'};
+    border: 2px solid ${props => props.theme?.token?.colorBgContainer || (props.theme as any)?.token?.colorBgContainer || '#fff'};
 
     ${props => props.status === 'online' && `
       background-color: #52c41a;
@@ -87,17 +87,17 @@ const UserTextInfo = styled.div`
 
 const UserName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme?.token?.colorText || 'rgba(0, 0, 0, 0.88)'};
+  color: ${props => props.theme?.token?.colorText || (props.theme as any)?.token?.colorText || 'rgba(0, 0, 0, 0.88)'};
   font-size: 14px;
 `;
 
 const UserMeta = styled.div`
   font-size: 12px;
-  color: ${props => props.theme?.token?.colorTextSecondary || 'rgba(0, 0, 0, 0.65)'};
+  color: ${props => props.theme?.token?.colorTextSecondary || (props.theme as any)?.token?.colorTextSecondary || 'rgba(0, 0, 0, 0.65)'};
 `;
 
 // 用户状态枚举
-export enum UserStatus {
+export const enum UserStatus {
   ONLINE = 'online',
   OFFLINE = 'offline',
   FROZEN = 'frozen',
@@ -245,8 +245,8 @@ const mockUsers: UserItem[] = [
 ];
 
 const UserManagement: React.FC = () => {
-  const { themeMode } = useTheme();
-  const actionRef = useRef<ActionType>();
+  const { isDarkMode } = useTheme();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // 生成更多 Mock 数据

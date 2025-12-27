@@ -7,78 +7,11 @@
  * @version 1.0.0
  */
 
-import {
-  UserListResponse
+import type {
+  UserListResponse,
+  User
 } from '../types/user';
-
-// 临时内联类型以解决导入问题
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  phone: string;
-  realName?: string;
-  nickname?: string;
-  avatar?: string;
-  status: 'active' | 'inactive' | 'suspended' | 'pending' | 'banned';
-  role: 'super_admin' | 'admin' | 'manager' | 'operator' | 'user';
-  authStatus: 'verified' | 'unverified' | 'pending_verification' | 'rejected';
-  gender?: 'male' | 'female' | 'other' | 'unknown';
-  birthday?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  createdAt: string;
-  updatedAt: string;
-  lastLoginAt?: string;
-  lastLoginIP?: string;
-  registrationIP?: string;
-  loginCount: number;
-  postCount: number;
-  followerCount: number;
-  followingCount: number;
-  emailVerified: boolean;
-  phoneVerified: boolean;
-  identityVerified: boolean;
-  twoFactorEnabled: boolean;
-  loginNotifications: boolean;
-  language: string;
-  timezone: string;
-  tags?: string[];
-  internalNotes?: string;
-  riskLevel: 'low' | 'medium' | 'high';
-  suspiciousActivity: boolean;
-}
-
-enum UserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-  PENDING = 'pending',
-  BANNED = 'banned',
-}
-
-enum UserRole {
-  SUPER_ADMIN = 'super_admin',
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  OPERATOR = 'operator',
-  USER = 'user',
-}
-
-enum AuthStatus {
-  VERIFIED = 'verified',
-  UNVERIFIED = 'unverified',
-  PENDING = 'pending_verification',
-  REJECTED = 'rejected',
-}
-
-enum Gender {
-  MALE = 'male',
-  FEMALE = 'female',
-  OTHER = 'other',
-  UNKNOWN = 'unknown',
-}
+import { UserStatus, UserRole, AuthStatus, Gender } from '../types/user';
 
 // 生成随机ID的辅助函数
 const generateId = (): string => {
@@ -133,7 +66,7 @@ const generateMockUser = (index: number): User => {
   const createdAt = randomDate(new Date(2020, 0, 1), new Date());
   const lastLoginAt = Math.random() > 0.1 ? randomDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), new Date()) : undefined;
 
-  const randomTags = [];
+  const randomTags: string[] = [];
   const tagCount = Math.floor(Math.random() * 4);
   for (let i = 0; i < tagCount; i++) {
     const tag = tags[Math.floor(Math.random() * tags.length)];

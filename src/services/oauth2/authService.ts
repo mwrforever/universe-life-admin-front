@@ -144,8 +144,8 @@ export class OAuth2Service {
       client_id: OAUTH2_CONFIG.CLIENT_ID,
       redirect_uri: OAUTH2_CONFIG.REDIRECT_URI,
       scope: OAUTH2_CONFIG.SCOPE,
-      state: state,
-      code_challenge: code_challenge,
+      state,
+      code_challenge,
       code_challenge_method: 'S256',
     });
 
@@ -184,7 +184,7 @@ export class OAuth2Service {
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        code: code,
+        code,
         redirect_uri: OAUTH2_CONFIG.REDIRECT_URI,
         client_id: OAUTH2_CONFIG.CLIENT_ID,
         code_verifier: codeVerifier,
@@ -390,7 +390,7 @@ export class OAuth2Service {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          token: token,
+          token,
           token_type_hint: tokenTypeHint,
           client_id: OAUTH2_CONFIG.CLIENT_ID,
         }),

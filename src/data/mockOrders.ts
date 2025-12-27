@@ -9,17 +9,17 @@
  */
 
 import {
-  Order,
-  OrderListResponse,
+  type Order,
+  type OrderListResponse,
   OrderStatus,
   PaymentMethod,
   LogisticsStatus,
   OrderType,
-  Address,
-  OrderItem,
-  LogisticsInfo,
-  PaymentInfo,
-  OrderQueryParams
+  type Address,
+  type OrderItem,
+  type LogisticsInfo,
+  type PaymentInfo,
+  type OrderQueryParams
 } from '../types/trade/index';
 
 // 中文姓名库
@@ -167,7 +167,7 @@ const generateLogisticsInfo = (): LogisticsInfo | undefined => {
     carrierCode: carrier.code,
     status: currentStatus,
     shippedAt,
-    estimatedDeliveryAt: new Date(shippedAt.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    estimatedDeliveryAt: new Date(new Date(shippedAt).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
     deliveredAt: currentStatus === LogisticsStatus.DELIVERED ? randomDate(new Date(shippedAt), new Date()) : undefined,
     trackingUrl: `https://www.17track.com/en/track?nums=${carrier.code}${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
     shippingAddress: generateAddress(),

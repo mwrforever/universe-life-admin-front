@@ -19,8 +19,7 @@ import {
   Button,
   Typography,
   Space,
-  Tooltip,
-  Switch
+  Tooltip
 } from 'antd';
 import {
   DashboardOutlined,
@@ -28,30 +27,25 @@ import {
   FileTextOutlined,
   SettingOutlined,
   NotificationOutlined,
-  SearchOutlined,
   LogoutOutlined,
   MoonOutlined,
   SunOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  ThunderboltOutlined,
   TeamOutlined,
   SafetyOutlined,
   CustomerServiceOutlined,
   MoneyCollectOutlined,
   BarChartOutlined,
   MonitorOutlined,
-  DatabaseOutlined,
-  CloudServerOutlined,
-  ApiOutlined
+  DatabaseOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useTheme } from '../../context/ThemeContext';
 import styled from '@emotion/styled';
 import UniverseLifeLogo from '../common/UniverseLifeLogo';
 
-const { Header, Sider, Content } = Layout;
-const { Text } = Typography;
+const { Header, Sider } = Layout;
 
 // ============== 样式组件 ==============
 
@@ -890,7 +884,7 @@ const ThemeTooltip: React.FC<{
               borderBottom: `4px solid ${isDark ? 'rgba(255, 255, 255, 0.95)' : 'rgba(0, 0, 0, 0.85)'}`,
             }}
           />
-          <style jsx>{`
+          <style>{`
             @keyframes tooltipFadeIn {
               from {
                 opacity: 0;
@@ -931,6 +925,7 @@ interface MenuItem {
   icon: React.ReactNode;
   label: string;
   path?: string;
+  children?: MenuItem[];
 }
 
 // ============== 组件实现 ==============

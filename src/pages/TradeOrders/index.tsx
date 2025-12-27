@@ -70,13 +70,14 @@ import { useTheme } from '../../context/ThemeContext';
 
 // 导入类型和数据
 import {
-  Order,
+  type Order,
   OrderStatus,
   PaymentMethod,
   OrderType,
-  OrderQueryParams,
-  OrderListResponse,
-  Address
+  LogisticsStatus,
+  type OrderQueryParams,
+  type OrderListResponse,
+  type Address
 } from '../../types/trade/index';
 import { mockGetOrderList } from '../../data/mockOrders';
 
@@ -1031,9 +1032,9 @@ export const TradeOrderCenter: React.FC = () => {
                     物流轨迹
                   </Title>
                   <Timeline
-                    items={selectedOrder.logisticsInfo.timeline.map((item, index) => ({
+                    items={selectedOrder.logisticsInfo?.timeline.map((item, index) => ({
                       key: index,
-                      color: index === selectedOrder.logisticsInfo.timeline.length - 1 ? 'blue' : 'gray',
+                      color: index === (selectedOrder.logisticsInfo?.timeline.length ?? 0) - 1 ? 'blue' : 'gray',
                       children: (
                         <div>
                           <div style={{
@@ -1350,7 +1351,7 @@ export const TradeOrderCenter: React.FC = () => {
       </Drawer>
 
       {/* 自定义样式 */}
-      <style jsx>{`
+      <style>{`
         .zebra-row-light {
           background-color: rgba(0, 0, 0, 0.02);
         }
