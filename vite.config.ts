@@ -21,8 +21,38 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: [
+      "com.universe-life.back.front"
+    ],
     port: 5000,
     host: true,
+    proxy: {
+      '/api/employee': {
+        target: 'http://com.universe-life.auth.server',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/api': {
+        target: 'http://com.universe-life.gateway.server',
+        changeOrigin: true,
+      },
+      '/oauth2': {
+        target: 'http://com.universe-life.auth.server',
+        changeOrigin: true,
+      },
+      '/userinfo': {
+        target: 'http://com.universe-life.auth.server',
+        changeOrigin: true,
+      },
+      '/connect': {
+        target: 'http://com.universe-life.auth.server',
+        changeOrigin: true,
+      },
+      '/.well-known': {
+        target: 'http://com.universe-life.auth.server',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',

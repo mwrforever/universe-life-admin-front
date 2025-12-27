@@ -293,6 +293,83 @@
   background-color: var(--universe-border) !important;
 }
 
+/* System module form field styles */
+.styled-input.ant-input {
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+}
+
+.styled-input.ant-input:hover {
+  border-color: rgba(91, 80, 255, 0.3);
+  background: #fff;
+}
+
+.styled-input.ant-input:focus,
+.styled-input.ant-input.ant-input-focused {
+  border-color: #5B50FF;
+  box-shadow: 0 0 0 3px rgba(91, 80, 255, 0.1);
+  background: #fff;
+}
+
+/* When allowClear is used, the wrapper has styled-input class */
+.styled-input.ant-input-affix-wrapper {
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  padding: 0 12px;
+}
+
+.styled-input.ant-input-affix-wrapper input.ant-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: 100% !important;
+  outline: none !important;
+}
+
+.styled-input.ant-input-affix-wrapper input.ant-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.styled-input.ant-input-affix-wrapper:hover {
+  border-color: rgba(91, 80, 255, 0.3);
+  background: #fff;
+}
+
+.styled-input.ant-input-affix-wrapper-focused,
+.styled-input.ant-input-affix-wrapper:focus-within {
+  border-color: #5B50FF;
+  box-shadow: 0 0 0 3px rgba(91, 80, 255, 0.1);
+  background: #fff;
+}
+
+.styled-select .ant-select-selector {
+  height: 40px !important;
+  border-radius: 10px !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 4px 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+.styled-select:hover .ant-select-selector {
+  border-color: rgba(91, 80, 255, 0.3) !important;
+}
+
+.styled-select.ant-select-focused .ant-select-selector {
+  border-color: #5B50FF !important;
+  box-shadow: 0 0 0 3px rgba(91, 80, 255, 0.1) !important;
+}
+
 .ant-switch-checked {
   background-color: var(--universe-primary) !important;
 }
