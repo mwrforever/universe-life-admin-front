@@ -28,45 +28,79 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api/employee': {
-        target: 'http://com.universe-life.auth.server',
+        target: 'http://localhost:8099',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      '/api': {
-        target: 'http://com.universe-life.gateway.server',
-        changeOrigin: true,
-      },
       '/oauth2': {
-        target: 'http://com.universe-life.auth.server',
+        target: 'http://localhost:8099',
         changeOrigin: true,
       },
-      '/userinfo': {
-        target: 'http://com.universe-life.auth.server',
-        changeOrigin: true,
-      },
-      '/connect': {
-        target: 'http://com.universe-life.auth.server',
-        changeOrigin: true,
-      },
-      '/.well-known': {
-        target: 'http://com.universe-life.auth.server',
+      '/api': {
+        target: 'http://localhost:8101',
         changeOrigin: true,
       },
     },
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false, // 生产环境关闭 sourcemap 减小体积
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          antd: ['antd'],
-          redux: ['@reduxjs/toolkit', 'react-redux'],
-          router: ['react-router-dom'],
+        // 更细粒度的代码分割策略
+        manualChunks: (id) => {
+          // node_modules 包分离
+          if (id.includes('node_modules')) {
+            // React 核心
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-core';
+            }
+
+            // Ant Design 生态
+            if (id.includes('antd') || id.includes('@ant-design')) {
+              return 'antd';
+            }
+
+            // 路由
+            if (id.includes('react-router')) {
+              return 'router';
+            }
+
+            // Redux
+            if (id.includes('@reduxjs') || id.includes('react-redux')) {
+              return 'redux';
+            }
+
+            // 图表库
+            if (id.includes('@ant-design/plots') || id.includes('echarts')) {
+              return 'charts';
+            }
+
+            // 其他第三方库
+            return 'vendor';
+          }
+
+          // 业务代码分离
+          if (id.includes('src/pages')) {
+            return 'pages';
+          }
+
+          if (id.includes('src/components')) {
+            return 'components';
+          }
+
+          if (id.includes('src/services')) {
+            return 'services';
+          }
         },
+        // chunk 文件命名策略
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
+    // 提高 chunk 大小警告阈值（避免不必要的警告）
+    chunkSizeWarningLimit: 1000,
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),

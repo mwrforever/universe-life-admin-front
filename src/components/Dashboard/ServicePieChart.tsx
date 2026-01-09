@@ -14,7 +14,7 @@ const generateServiceData = () => [
 ];
 
 const ServicePieChart: React.FC = () => {
-  const { theme, chartColors, isDarkMode } = useTheme();
+  const { theme, chartColors } = useTheme();
 
   const pieConfig = {
     data: generateServiceData(),
@@ -25,8 +25,7 @@ const ServicePieChart: React.FC = () => {
     height: 400,
     color: chartColors.pieColors,
     label: {
-      type: 'outer',
-      content: '{name} {percentage}',
+      text: (d: { type: string; percentage: number }) => `${d.type} ${d.percentage}%`,
       style: {
         fill: chartColors.legendTextColor,
         fontSize: 12,
@@ -73,10 +72,6 @@ const ServicePieChart: React.FC = () => {
         style: {
           fill: chartColors.legendTextColor,
           fontSize: 12,
-        },
-        formatter: (text: string, item: any) => {
-          const dataItem = item.data;
-          return `${text} (${dataItem.percentage}%)`;
         },
       },
       marker: {

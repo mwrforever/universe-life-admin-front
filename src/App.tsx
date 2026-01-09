@@ -6,67 +6,64 @@
  * 支持多页面路由导航和表单认证
  *
  * @author James
- * @version 2.0.0
+ * @version 3.0.0 - 添加路由懒加载优化
  */
 
-import React, { useState, Suspense } from 'react'
+import React, { useState, Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, Spin } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { ThemeProvider } from './context/ThemeContext'
 import ProBasicLayout from './components/layout/ProBasicLayout'
-import Dashboard from './pages/Dashboard'
-import {
-  UserManagement as SystemUserManagement,
-  ResourceManagement,
-  RoleManagement,
-  DepartmentManagement,
-  EmployeeManagement,
-} from './pages/System'
-import { LoginPage } from './pages/auth'
 import { useAuth } from './hooks/useAuth'
 import './App.css'
 
+// 懒加载页面组件 - 实现代码分割
+const LoginPage = lazy(() => import('./pages/auth').then(m => ({ default: m.LoginPage })))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+
+// System 模块页面懒加载
+const UserManagement = lazy(() => import('./pages/System').then(m => ({ default: m.UserManagement })))
+const ResourceManagement = lazy(() => import('./pages/System').then(m => ({ default: m.ResourceManagement })))
+const RoleManagement = lazy(() => import('./pages/System').then(m => ({ default: m.RoleManagement })))
+const DepartmentManagement = lazy(() => import('./pages/System').then(m => ({ default: m.DepartmentManagement })))
+const EmployeeManagement = lazy(() => import('./pages/System').then(m => ({ default: m.EmployeeManagement })))
+
 // 页面映射类型
-type PageKey = 
-  | 'dashboard' 
-  | 'system' 
-  | 'system-user' 
-  | 'system-resource' 
-  | 'system-role' 
-  | 'system-department' 
+type PageKey =
+  | 'dashboard'
+  | 'system'
+  | 'system-user'
+  | 'system-resource'
+  | 'system-role'
+  | 'system-department'
   | 'system-employee'
   | 'orders'
   | 'settings'
 
-// 页面组件映射
-const pageComponents: Record<PageKey, React.ComponentType> = {
-  dashboard: Dashboard,
-  system: SystemUserManagement,
-  'system-user': SystemUserManagement,
+// 页面组件映射 - 使用懒加载组件
+const pageComponents: Record<PageKey, React.LazyExoticComponent<React.ComponentType<any>>> = {
+  dashboard: Dashboard as React.LazyExoticComponent<React.ComponentType<any>>,
+  system: UserManagement,
+  'system-user': UserManagement,
   'system-resource': ResourceManagement,
   'system-role': RoleManagement,
   'system-department': DepartmentManagement,
   'system-employee': EmployeeManagement,
-} as Record<PageKey, React.ComponentType>
+} as Record<PageKey, React.LazyExoticComponent<React.ComponentType<any>>>
 
 // 加载中组件
 const LoadingFallback: React.FC = () => (
-  <div style={{ 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    height: '100vh' 
-  }}>
-    <Spin size="large" tip="加载中..." />
-  </div>
+  <Spin size="large" tip="加载中..." fullscreen />
 )
 
 // 受保护的路由组件
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth()
 
-  if (isLoading) {
+  // ✅ 优化：如果token已经存在但用户信息还在加载，直接显示内容
+  // 避免因为isLoading导致的闪烁
+  if (isLoading && !isAuthenticated) {
     return <LoadingFallback />
   }
 
@@ -97,7 +94,9 @@ const MainLayout: React.FC = () => {
       currentPage={currentPage}
       onPageChange={handlePageChange}
     >
-      {renderCurrentPage()}
+      <Suspense fallback={<LoadingFallback />}>
+        {renderCurrentPage()}
+      </Suspense>
     </ProBasicLayout>
   )
 }
@@ -111,8 +110,15 @@ function App() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               {/* 公开路由 */}
-              <Route path="/login" element={<LoginPage />} />
-              
+              <Route
+                path="/login"
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <LoginPage />
+                  </Suspense>
+                }
+              />
+
               {/* 受保护路由 */}
               <Route
                 path="/*"

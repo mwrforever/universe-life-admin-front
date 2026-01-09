@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProCard, ProList } from '@ant-design/pro-components';
-import { Badge, Tag, Progress, Space, Tooltip, Typography } from 'antd';
+import { Badge, Progress, Space, Tooltip, Typography } from 'antd';
 import {
   DatabaseOutlined,
   CloudServerOutlined,
@@ -98,7 +98,7 @@ const initialServices: ServiceStatus[] = [
 ];
 
 const ServiceMonitor: React.FC = () => {
-  const { theme, chartColors, isDarkMode } = useTheme();
+  const { theme, chartColors } = useTheme();
   const [services, setServices] = useState<ServiceStatus[]>(initialServices);
   const [isChecking, setIsChecking] = useState(false);
 

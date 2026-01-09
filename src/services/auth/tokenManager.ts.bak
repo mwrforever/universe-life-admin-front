@@ -17,15 +17,14 @@ export interface IdTokenPayload {
   iat: number;           // 签发时间
 }
 
-// 用户信息（从 id_token 解析）
+// 用户信息（从 id_token 解析或用户信息接口获取）
 export interface UserInfo {
   sub: string;
   userName: string;
   userAvatar: string;
   authTime: number;
-  employeeNo?: string;   // 员工工号(从getUserProfile接口获取)
+  employeeNo?: string; // 工号（从用户信息接口获取）
 }
-
 const TOKEN_KEYS = {
   ACCESS_TOKEN: 'universe_access_token',
   REFRESH_TOKEN: 'universe_refresh_token',
@@ -38,12 +37,9 @@ const TOKEN_KEYS = {
 export class TokenManager {
   /**
    * 存储访问令牌及过期时间
-   * @param token - 访问令牌
-   * @param expiresIn - 过期时间（秒）
    */
   static setAccessToken(token: string, expiresIn: number): void {
     localStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, token);
-    // expiresIn 是相对时间（秒），转换为绝对过期时间（毫秒时间戳）
     const expiresAt = Date.now() + expiresIn * 1000;
     localStorage.setItem(TOKEN_KEYS.TOKEN_EXPIRES_AT, expiresAt.toString());
     authLogger.info('✅ Access Token已存储，过期时间:', new Date(expiresAt).toLocaleString());
@@ -51,7 +47,6 @@ export class TokenManager {
 
   /**
    * 获取访问令牌（过期返回null）
-   * 每次获取时都会检查是否过期，确保只返回有效token
    */
   static getAccessToken(): string | null {
     const token = localStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
@@ -61,7 +56,6 @@ export class TokenManager {
       return null;
     }
 
-    // 检查是否过期
     if (expiresAt && Date.now() > parseInt(expiresAt, 10)) {
       authLogger.warn('⚠️ Access Token已过期');
       return null;
@@ -144,7 +138,6 @@ export class TokenManager {
     authLogger.info('✅ 用户信息已存储:', userInfo.userName);
   }
 
-
   /**
    * 更新用户信息（合并现有信息）
    */
@@ -154,16 +147,29 @@ export class TokenManager {
       const updatedInfo = { ...currentInfo, ...updates };
       this.setUserInfo(updatedInfo);
       authLogger.info('✅ 用户信息已更新');
-    } else {
-      // 如果没有现有信息，创建新的用户信息
-      this.setUserInfo(updates as UserInfo);
     }
-  }
 
   /**
    * 获取用户信息
    */
   static getUserInfo(): UserInfo | null {
+    const userInfoStr = localStorage.getItem(TOKEN_KEYS.USER_INFO);
+    if (!userInfoStr) {
+      return null;
+    }
+    try {
+      return JSON.parse(userInfoStr) as UserInfo;
+    } catch {
+      authLogger.error('❌ 解析用户信息失败');
+      return null;
+    }
+  } else {
+      // 如果没有现有信息，创建新的用户信息
+      this.setUserInfo(updates as UserInfo);
+    }
+  }
+
+
     const userInfoStr = localStorage.getItem(TOKEN_KEYS.USER_INFO);
     if (!userInfoStr) {
       return null;
@@ -187,20 +193,19 @@ export class TokenManager {
   }
 
   /**
-   * 检查令牌是否已过期
-   * @returns {boolean} true=已过期或不存在, false=仍然有效
+   * 检查令牌是否即将过期（5分钟内）
    */
-  static isTokenExpired(): boolean {
+  static isTokenExpiringSoon(): boolean {
     const expiresAt = localStorage.getItem(TOKEN_KEYS.TOKEN_EXPIRES_AT);
     if (!expiresAt) {
-      return true; // 没有过期时间记录，视为已过期
+      return true;
     }
-    return Date.now() > parseInt(expiresAt, 10);
+    const fiveMinutes = 5 * 60 * 1000;
+    return Date.now() + fiveMinutes > parseInt(expiresAt, 10);
   }
 
   /**
    * 检查是否已登录
-   * @returns {boolean} true=已登录（token有效）, false=未登录
    */
   static isLoggedIn(): boolean {
     return !!this.getAccessToken();
@@ -208,33 +213,53 @@ export class TokenManager {
 
   /**
    * 存储登录信息（从API响应的TokenData中保存）
-   * 注意：新的登录接口返回的data字段直接包含accessToken等camelCase字段
+   * 适配后端API返回的字段名（驼峰命名）
    */
   static saveLoginData(tokenData: {
     accessToken: string;
     refreshToken: string;
-    expiresIn: string;  // 可能是秒数（如 "3600"）或毫秒时间戳（如 "1767352677867"）
-    tokenType: string;
+    expiresIn: string | number; // 可以是字符串时间戳或数字秒数
+    tokenType?: string;
   }): void {
-    // 🐛 调试：打印传入的 tokenData
-    authLogger.info('📦 saveLoginData 接收到参数:', tokenData);
-    authLogger.info('📦 accessToken 类型:', typeof tokenData.accessToken);
-    authLogger.info('📦 refreshToken 类型:', typeof tokenData.refreshToken);
-    authLogger.info('📦 expiresIn 值:', tokenData.expiresIn, '类型:', typeof tokenData.expiresIn);
-    authLogger.info('📦 tokenType:', tokenData.tokenType);
+    // 处理过期时间：可能是毫秒时间戳字符串或秒数
+    let expiresIn: number;
+    if (typeof tokenData.expiresIn === 'string') {
+      // 如果是字符串时间戳，计算剩余秒数
+      const expiresTimestamp = parseInt(tokenData.expiresIn, 10);
+      expiresIn = Math.floor((expiresTimestamp - Date.now()) / 1000);
+    } else {
+      expiresIn = tokenData.expiresIn;
+    }
 
-    // expiresIn 可能是秒数或毫秒时间戳，转换为数字传给 setAccessToken
-    // setAccessToken 会自动判断是相对时间还是绝对时间
-    const expiresInValue = parseInt(tokenData.expiresIn, 10);
-    authLogger.info('📦 转换后的 expiresInValue:', expiresInValue);
+    // 确保过期时间合理（默认2小时）
+    if (expiresIn <= 0 || expiresIn > 86400) {
+      expiresIn = 7200; // 2小时
+    }
 
-    this.setAccessToken(tokenData.accessToken, expiresInValue);
+    this.setAccessToken(tokenData.accessToken, expiresIn);
     this.setRefreshToken(tokenData.refreshToken);
 
-    // 注意：新接口不返回 id_token，需要通过其他方式获取用户信息
-    // 暂时先存储基本信息，后续在登录流程中调用 getUserProfile 获取完整信息
+    // 注意：后端API没有返回id_token，无法直接解析用户信息
+    // 用户信息需要通过额外的接口获取
+    // 暂时使用accessToken解析基本信息
+    try {
+      const basicInfo = this.parseJwtPayload<{sub: string}>(tokenData.accessToken);
+      if (basicInfo?.sub) {
+        // 使用sub作为用户标识
+        const userInfo: UserInfo = {
+          sub: basicInfo.sub,
+          userName: basicInfo.sub, // 暂时使用sub作为用户名
+          userAvatar: '',
+          authTime: Date.now()
+        };
+        this.setUserInfo(userInfo);
+        authLogger.info('✅ 从accessToken解析用户信息成功');
+      }
+    } catch (err) {
+      authLogger.warn('⚠️ 无法从accessToken解析用户信息');
+    }
 
-    authLogger.info('✅ 登录数据已存储');
+    authLogger.info('✅ 登录数据已完整存储');
   }
 }
 

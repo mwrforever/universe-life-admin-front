@@ -19,7 +19,7 @@ export interface RoleListParams {
 
 // 角色详情VO
 export interface RoleDetailVO {
-  id: number;
+  id: string;
   roleCode: string;
   roleName: string;
   roleType: RoleType;
@@ -33,7 +33,7 @@ export interface RoleDetailVO {
 
 // 角色列表VO
 export interface RoleListVO {
-  id: number;
+  id: string;
   roleCode: string;
   roleName: string;
   roleType: RoleType;
@@ -43,7 +43,7 @@ export interface RoleListVO {
 
 // 角色选项VO
 export interface RoleOptionVO {
-  id: number;
+  id: string;
   roleCode: string;
   roleName: string;
 }
@@ -74,17 +74,17 @@ export const createRole = (data: CreateRoleRequest) => {
 };
 
 // 5.2 获取角色详情
-export const getRoleById = (id: number) => {
+export const getRoleById = (id: string) => {
   return request.get<RoleDetailVO>(`${BASE_URL}/${id}`);
 };
 
 // 5.3 更新角色
-export const updateRole = (id: number, data: UpdateRoleRequest) => {
+export const updateRole = (id: string, data: UpdateRoleRequest) => {
   return request.put<RoleDetailVO>(`${BASE_URL}/${id}`, data);
 };
 
 // 5.4 删除角色
-export const deleteRole = (id: number) => {
+export const deleteRole = (id: string) => {
   return request.delete(`${BASE_URL}/${id}`);
 };
 
@@ -94,7 +94,7 @@ export const getRoleList = (params: RoleListParams) => {
 };
 
 // 5.6 修改角色状态
-export const updateRoleStatus = (id: number, status: CommonStatus) => {
+export const updateRoleStatus = (id: string, status: CommonStatus) => {
   return request.patch(`${BASE_URL}/${id}/status`, { status });
 };
 
@@ -104,7 +104,7 @@ export const getRoleOptions = () => {
 };
 
 // 5.8 检查角色编码是否存在
-export const checkRoleCodeExists = (roleCode: string, excludeId?: number) => {
+export const checkRoleCodeExists = (roleCode: string, excludeId?: string) => {
   return request.get<{ exists: boolean }>(`${BASE_URL}/check-code`, { params: { roleCode, excludeId } });
 };
 

@@ -17,7 +17,6 @@ import {
   Badge,
   Input,
   Button,
-  Typography,
   Space,
   Tooltip
 } from 'antd';
@@ -42,6 +41,7 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
 import styled from '@emotion/styled';
 import UniverseLifeLogo from '../common/UniverseLifeLogo';
 
@@ -925,7 +925,7 @@ interface MenuItem {
   icon: React.ReactNode;
   label: string;
   path?: string;
-  children?: MenuItem[];
+  children?: Omit<MenuItem, 'children'>[];
 }
 
 // ============== 组件实现 ==============
@@ -936,6 +936,7 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
   children
 }) => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const { logout, user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -1053,9 +1054,23 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
   };
 
   // 处理用户菜单点击
-  const handleUserMenuClick = ({ key }: { key: string }) => {
+  const handleUserMenuClick = async ({ key }: { key: string }) => {
     console.log('用户菜单点击:', key);
-    // 实现具体业务逻辑
+
+    if (key === 'logout') {
+      // ✅ 实现登出逻辑
+      try {
+        await logout();
+      } catch (error) {
+        console.error('登出失败:', error);
+      }
+    } else if (key === 'profile') {
+      // 导航到个人资料页面
+      window.location.href = '/profile';
+    } else if (key === 'settings') {
+      // 导航到账户设置页面
+      window.location.href = '/settings';
+    }
   };
 
   // 处理搜索
@@ -1223,16 +1238,17 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
             <UserCard isDark={isDarkMode}>
               <Avatar
                 size="small"
-                icon={<UserOutlined />}
+                src={user?.userAvatar}
+                icon={!user?.userAvatar ? <UserOutlined /> : undefined}
                 style={{
-                  background: 'transparent',
+                  background: user?.userAvatar ? 'transparent' : undefined,
                   border: isDarkMode ? '2px solid rgba(255, 255, 255, 0.6)' : '2px solid #667eea',
                   color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : '#667eea',
                 }}
               />
               <div className="user-info">
-                <span className="user-name">宇宙管理员</span>
-                <span className="user-email">admin@universe.life</span>
+                <span className="user-name">{user?.userName}</span>
+                <span className="user-email">工号: {user?.employeeNo || user?.sub || "ADMIN001"}</span>
               </div>
             </UserCard>
           </Dropdown>
@@ -1253,7 +1269,7 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
           isDark={isDarkMode}
           mode="inline"
           selectedKeys={[currentPage]}
-          items={menuItems}
+          items={menuItems as any}
           onClick={handleMenuClick}
         />
       </CosmicSider>

@@ -78,7 +78,7 @@ const RoleManagement: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await roleApi.deleteRole(id);
       message.success('删除成功');
@@ -88,7 +88,7 @@ const RoleManagement: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (id: number, status: number) => {
+  const handleStatusChange = async (id: string, status: number) => {
     try {
       await roleApi.updateRoleStatus(id, status as CommonStatus);
       message.success('状态更新成功');

@@ -20,14 +20,14 @@ export interface ResourceListParams {
 
 // 资源详情VO
 export interface ResourceDetailVO {
-  id: number;
+  id: string;
   resourceCode: string;
   resourceName: string;
   resourceType: ResourceType;
   serviceName?: string;
   urlPattern?: string;
   httpMethod?: string;
-  parentId?: number;
+  parentId?: string;
   status: CommonStatus;
   sortOrder?: number;
   description?: string;
@@ -37,7 +37,7 @@ export interface ResourceDetailVO {
 
 // 资源列表VO
 export interface ResourceListVO {
-  id: number;
+  id: string;
   resourceCode: string;
   resourceName: string;
   resourceType: ResourceType;
@@ -48,7 +48,7 @@ export interface ResourceListVO {
 
 // 资源树VO
 export interface ResourceTreeVO {
-  id: number;
+  id: string;
   resourceCode: string;
   resourceName: string;
   resourceType: ResourceType;
@@ -64,7 +64,7 @@ export interface CreateResourceRequest {
   serviceName?: string;
   urlPattern?: string;
   httpMethod?: string;
-  parentId?: number;
+  parentId?: string;
   status: CommonStatus;
   sortOrder?: number;
   description?: string;
@@ -77,7 +77,7 @@ export interface UpdateResourceRequest {
   serviceName?: string;
   urlPattern?: string;
   httpMethod?: string;
-  parentId?: number;
+  parentId?: string;
   sortOrder?: number;
   description?: string;
 }
@@ -88,17 +88,17 @@ export const createResource = (data: CreateResourceRequest) => {
 };
 
 // 3.2 获取资源详情
-export const getResourceById = (id: number) => {
+export const getResourceById = (id: string) => {
   return request.get<ResourceDetailVO>(`${BASE_URL}/${id}`);
 };
 
 // 3.3 更新资源
-export const updateResource = (id: number, data: UpdateResourceRequest) => {
+export const updateResource = (id: string, data: UpdateResourceRequest) => {
   return request.put<ResourceDetailVO>(`${BASE_URL}/${id}`, data);
 };
 
 // 3.4 删除资源
-export const deleteResource = (id: number) => {
+export const deleteResource = (id: string) => {
   return request.delete(`${BASE_URL}/${id}`);
 };
 
@@ -113,7 +113,7 @@ export const getResourceTree = (serviceName?: string, resourceType?: ResourceTyp
 };
 
 // 3.7 修改资源状态
-export const updateResourceStatus = (id: number, status: CommonStatus) => {
+export const updateResourceStatus = (id: string, status: CommonStatus) => {
   return request.patch(`${BASE_URL}/${id}/status`, { status });
 };
 

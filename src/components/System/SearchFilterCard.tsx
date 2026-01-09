@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button, Space, Grid, Badge } from 'antd';
 import {
   SearchOutlined,
@@ -6,11 +6,15 @@ import {
   FilterOutlined,
   DownOutlined,
   UpOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { useTheme } from '../../context/ThemeContext';
 
 const { useBreakpoint } = Grid;
+
+// 节流间隔（毫秒）
+const THROTTLE_DELAY = 1000;
 
 interface SearchFilterCardProps {
   title: string;
@@ -20,6 +24,7 @@ interface SearchFilterCardProps {
   children: React.ReactNode;
   onSearch: () => void;
   onReset: () => void;
+  onRefresh?: () => void;
   filterCount?: number;
   extra?: React.ReactNode;
 }
@@ -217,12 +222,53 @@ const SearchFilterCard: React.FC<SearchFilterCardProps> = ({
   children,
   onSearch,
   onReset,
+  onRefresh,
   filterCount = 0,
   extra,
 }) => {
   const { isDarkMode } = useTheme();
   const screens = useBreakpoint();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // 节流控制
+  const lastSearchTimeRef = useRef<number>(0);
+  const lastRefreshTimeRef = useRef<number>(0);
+
+  // 节流搜索
+  const handleSearch = useCallback(() => {
+    const now = Date.now();
+    if (now - lastSearchTimeRef.current < THROTTLE_DELAY) {
+      return; // 节流中，忽略点击
+    }
+    lastSearchTimeRef.current = now;
+    setIsSearching(true);
+    
+    try {
+      onSearch();
+    } finally {
+      setTimeout(() => setIsSearching(false), 500);
+    }
+  }, [onSearch]);
+
+  // 节流刷新
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh) return;
+    
+    const now = Date.now();
+    if (now - lastRefreshTimeRef.current < THROTTLE_DELAY) {
+      return; // 节流中，忽略点击
+    }
+    lastRefreshTimeRef.current = now;
+    setIsRefreshing(true);
+    
+    try {
+      await onRefresh();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  }, [onRefresh]);
 
   return (
     <FilterContainer isDark={isDarkMode} accentColor={accentColor}>
@@ -237,6 +283,15 @@ const SearchFilterCard: React.FC<SearchFilterCardProps> = ({
           </TitleText>
         </TitleGroup>
         <Space size={12}>
+          {onRefresh && (
+            <ToggleButton
+              $isDark={isDarkMode}
+              onClick={handleRefresh}
+              icon={<SyncOutlined spin={isRefreshing} />}
+              title="刷新数据"
+              disabled={isRefreshing}
+            />
+          )}
           {extra}
           <FilterBadge count={filterCount} size="small" offset={[-2, 2]}>
             <ToggleButton
@@ -261,7 +316,9 @@ const SearchFilterCard: React.FC<SearchFilterCardProps> = ({
               $variant="primary"
               $isDark={isDarkMode}
               icon={<SearchOutlined />}
-              onClick={onSearch}
+              onClick={handleSearch}
+              loading={isSearching}
+              disabled={isSearching}
             >
               搜索
             </ActionButton>

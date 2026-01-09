@@ -186,7 +186,7 @@ const generateLogisticsInfo = (): LogisticsInfo | undefined => {
         location: '转运中心'
       }] : []),
       ...(currentStatus === LogisticsStatus.DELIVERED ? [{
-        time: new Date(shippedAt.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        time: new Date(new Date(shippedAt).getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
         status: '已签收',
         description: '包裹已成功送达',
         location: '目的地'
@@ -277,11 +277,11 @@ const generateMockOrder = (index: number): Order => {
     // 时间信息
     createdAt,
     updatedAt: new Date().toISOString(),
-    expiredAt: randomStatus === OrderStatus.PENDING_PAYMENT ? new Date(createdAt.getTime() + 30 * 60 * 1000).toISOString() : undefined,
+    expiredAt: randomStatus === OrderStatus.PENDING_PAYMENT ? new Date(new Date(createdAt).getTime() + 30 * 60 * 1000).toISOString() : undefined,
     paidAt: paymentInfo?.paidAt,
     shippedAt: logisticsInfo?.shippedAt,
-    completedAt: randomStatus === OrderStatus.COMPLETED ? randomDate(createdAt, new Date()) : undefined,
-    cancelledAt: randomStatus === OrderStatus.CANCELLED ? randomDate(createdAt, new Date()) : undefined,
+    completedAt: randomStatus === OrderStatus.COMPLETED ? randomDate(new Date(createdAt), new Date()) : undefined,
+    cancelledAt: randomStatus === OrderStatus.CANCELLED ? randomDate(new Date(createdAt), new Date()) : undefined,
 
     // 支付信息
     paymentInfo,
@@ -296,7 +296,7 @@ const generateMockOrder = (index: number): Order => {
     // 评价信息
     rating: randomStatus === OrderStatus.COMPLETED && Math.random() > 0.3 ? Math.floor(Math.random() * 3 + 3) : undefined,
     review: randomStatus === OrderStatus.COMPLETED && Math.random() > 0.5 ? ['服务很好', '商品不错', '物流很快', '性价比高'][Math.floor(Math.random() * 4)] : undefined,
-    reviewedAt: randomStatus === OrderStatus.COMPLETED && Math.random() > 0.4 ? randomDate(createdAt, new Date()) : undefined,
+    reviewedAt: randomStatus === OrderStatus.COMPLETED && Math.random() > 0.4 ? randomDate(new Date(createdAt), new Date()) : undefined,
 
     // 退款信息
     refundAmount: paymentInfo?.refundInfo?.amount,

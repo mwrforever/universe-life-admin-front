@@ -11,11 +11,28 @@ export type CommonStatus = typeof CommonStatus[keyof typeof CommonStatus];
 
 // 用户状态
 export const UserStatus = {
-  DISABLED: 0,
-  NORMAL: 1,
-  LOCKED: 2,
+  NORMAL: 0,      // 正常
+  CAN_RECEIVE: 1, // 可接单
+  CAN_PUBLISH: 2, // 可发单
+  DISABLE: 3,     // 禁用
 } as const;
 export type UserStatus = typeof UserStatus[keyof typeof UserStatus];
+
+// 用户状态文本映射
+export const UserStatusText: Record<UserStatus, string> = {
+  [UserStatus.NORMAL]: '正常',
+  [UserStatus.CAN_RECEIVE]: '可接单',
+  [UserStatus.CAN_PUBLISH]: '可发单',
+  [UserStatus.DISABLE]: '禁用',
+};
+
+// 用户状态颜色映射
+export const UserStatusColor: Record<UserStatus, string> = {
+  [UserStatus.NORMAL]: 'success',
+  [UserStatus.CAN_RECEIVE]: 'processing',
+  [UserStatus.CAN_PUBLISH]: 'warning',
+  [UserStatus.DISABLE]: 'default',
+};
 
 // 性别
 export const Gender = {

@@ -1,6 +1,5 @@
 import React from 'react';
-import { Row, Col, Card, Space, Typography } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { Row, Col, Typography } from 'antd';
 import StatisticCards from '../../components/Dashboard/StatisticCards';
 import TrafficChart from '../../components/Dashboard/TrafficChart';
 import ServicePieChart from '../../components/Dashboard/ServicePieChart';
