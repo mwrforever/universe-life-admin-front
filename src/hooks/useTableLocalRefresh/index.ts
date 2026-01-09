@@ -773,6 +773,8 @@ export function useTableLocalRefresh<T extends Record<string, any>>(
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+      // 重置 prevParamsRef，确保 StrictMode 下重新挂载时能正确触发首次加载
+      prevParamsRef.current = null;
     };
   }, []);
 
