@@ -102,7 +102,7 @@ const EmployeeManagement: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await employeeApi.deleteEmployee(id);
       message.success('删除成功');
@@ -112,7 +112,7 @@ const EmployeeManagement: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (id: number, status: number) => {
+  const handleStatusChange = async (id: string, status: number) => {
     try {
       await employeeApi.updateEmployeeStatus(id, status as CommonStatus);
       message.success('状态更新成功');
@@ -122,7 +122,7 @@ const EmployeeManagement: React.FC = () => {
     }
   };
 
-  const handleResetPassword = async (id: number) => {
+  const handleResetPassword = async (id: string) => {
     try {
       await employeeApi.resetEmployeePassword(id, '123456');
       message.success('密码重置成功，默认密码：123456');

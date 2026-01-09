@@ -17,19 +17,19 @@ import {
   SafetyOutlined
 } from '@ant-design/icons';
 import styled from '@emotion/styled';
-import { authApi, TokenManager } from '@/services/auth';
+import { authApi, TokenManager, UserAuthType, CaptchaUsageType } from '@/services/auth';
 import { authLogger } from '@/utils/logger';
 
 type LoginType = 'password' | 'code';
 
 interface PasswordFormData {
-  identification: string;
+  username: string;
   password: string;
 }
 
 interface CodeFormData {
   identification: string;
-  verifyCode: string;
+  captcha: string;
 }
 
 // 页面容器
@@ -353,12 +353,16 @@ const LoginPage: React.FC = () => {
   // 使用 Ant Design Token
   const { token: _token } = theme.useToken();
 
+  // ✅ 检查登录状态
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(() => {
-    if (TokenManager.isLoggedIn()) {
-      authLogger.info('用户已登录，跳转到首页');
-      navigate('/', { replace: true });
+    const loggedIn = TokenManager.isLoggedIn();
+    setIsLoggedIn(loggedIn);
+    if (loggedIn) {
+      authLogger.info('检测到用户已登录');
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -371,25 +375,43 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await authApi.loginByPassword({
-        identification: values.identification,
+        identification: values.username, // 字段名改为 identification
         password: values.password,
       }) as any;
 
-      // 检查响应状态
-      if (response.code !== 1) {
-        message.error(response.message || '登录失败');
-        return;
-      }
+      // 🐛 调试：打印完整响应结构
+      authLogger.info('📦 登录接口完整响应:', response);
+      authLogger.info('📦 response.data:', response.data);
 
-      // 保存Token数据
+      // 保存Token数据（注意：request.ts已经处理了code !== 1的情况）
+      // response.data 就是 TokenData { accessToken, refreshToken, expiresIn, tokenType }
       TokenManager.saveLoginData(response.data);
+
+      // 获取用户信息并缓存
+      try {
+        const userProfile = await authApi.getUserProfile() as any;
+        if (userProfile.code === 1 && userProfile.data) {
+          TokenManager.updateUserInfo({
+            employeeNo: userProfile.data.employeeNo,
+            userAvatar: userProfile.data.avatar,
+          });
+          authLogger.info('✅ 用户信息已更新:', userProfile.data);
+        }
+      } catch (err) {
+        authLogger.warn('⚠️ 获取用户信息失败，将继续登录流程');
+      }
 
       authLogger.info('✅ 密码登录成功');
       message.success('欢迎回来！');
-      navigate('/', { replace: true });
+
+      // ✅ 优化：使用setTimeout确保token保存完成后再导航
+      // 避免ProtectedRoute读取到旧的认证状态
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 100);
     } catch (error: any) {
+      // 错误已被request.ts拦截器处理，这里只需记录日志
       authLogger.error('❌ 密码登录失败:', error);
-      message.error(error?.response?.data?.message || '账号或密码错误');
     } finally {
       setLoading(false);
     }
@@ -400,25 +422,38 @@ const LoginPage: React.FC = () => {
     try {
       const response = await authApi.loginByCaptcha({
         identification: values.identification,
-        verifyCode: values.verifyCode,
-        usageType: 1, // 1-登录验证
+        captcha: values.captcha,
+        captchaUsageType: 1, // 1-登录验证
       }) as any;
 
-      // 检查响应状态
-      if (response.code !== 1) {
-        message.error(response.message || '登录失败');
-        return;
-      }
-
-      // 保存Token数据
+      // 保存Token数据（注意：request.ts已经处理了code !== 1的情况）
       TokenManager.saveLoginData(response.data);
+
+      // 获取用户信息并缓存
+      try {
+        const userProfile = await authApi.getUserProfile() as any;
+        if (userProfile.code === 1 && userProfile.data) {
+          TokenManager.updateUserInfo({
+            employeeNo: userProfile.data.employeeNo,
+            userAvatar: userProfile.data.avatar,
+          });
+          authLogger.info('✅ 用户信息已更新:', userProfile.data);
+        }
+      } catch (err) {
+        authLogger.warn('⚠️ 获取用户信息失败，将继续登录流程');
+      }
 
       authLogger.info('✅ 验证码登录成功');
       message.success('欢迎回来！');
-      navigate('/', { replace: true });
+
+      // ✅ 优化：使用setTimeout确保token保存完成后再导航
+      // 避免ProtectedRoute读取到旧的认证状态
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 100);
     } catch (error: any) {
+      // 错误已被request.ts拦截器处理，这里只需记录日志
       authLogger.error('❌ 验证码登录失败:', error);
-      message.error(error?.response?.data?.message || '验证码错误');
     } finally {
       setLoading(false);
     }
@@ -440,19 +475,21 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      const response = await authApi.sendVerifyCode({ 
+      // 自动识别认证类型
+      const identificationType = isPhone ? UserAuthType.Phone : UserAuthType.Email;
+
+      const response = await authApi.sendVerifyCode({
         identification,
-        usageType: 1, // 1-登录验证
+        identificationType,
+        captchaUsageType: CaptchaUsageType.Login, // 1-登录验证
       }) as any;
-      
-      if (response.code === 1) {
-        message.success('验证码已发送');
-        setCountdown(60);
-      } else {
-        message.error(response.message || '验证码发送失败');
-      }
+
+      // request.ts已经处理了code !== 1的情况
+      message.success('验证码已发送');
+      setCountdown(60);
     } catch (error: any) {
-      message.error(error?.response?.data?.message || '验证码发送失败');
+      // 错误已被request.ts拦截器处理，这里只需记录日志
+      authLogger.error('❌ 发送验证码失败:', error);
     }
   }, [codeForm]);
 
@@ -468,12 +505,12 @@ const LoginPage: React.FC = () => {
           layout="vertical"
         >
           <Form.Item
-            name="identification"
+            name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="工号 / 用户名 / 手机号 / 邮箱"
+              placeholder="邮箱 / 工号 / 手机号 / 用户名"
               size="large"
             />
           </Form.Item>
@@ -520,7 +557,7 @@ const LoginPage: React.FC = () => {
           <Form.Item style={{ marginBottom: 24 }}>
             <CodeInputGroup>
               <Form.Item
-                name="verifyCode"
+                name="captcha"
                 noStyle
                 rules={[
                   { required: true, message: '请输入验证码' },
@@ -604,14 +641,29 @@ const LoginPage: React.FC = () => {
         <LoginBox>
           <WelcomeHeader>
             <WelcomeTitle>欢迎回来</WelcomeTitle>
-            <WelcomeSub>请填写以下信息以登录您的账户</WelcomeSub>
+            <WelcomeSub>
+              {isLoggedIn ? '您已登录，点击下方按钮进入首页' : '请填写以下信息以登录您的账户'}
+            </WelcomeSub>
           </WelcomeHeader>
 
-          <StyledTabs
-            activeKey={loginType}
-            onChange={(key) => setLoginType(key as LoginType)}
-            items={tabItems}
-          />
+          {/* ✅ 已登录状态：显示进入首页按钮 */}
+          {isLoggedIn ? (
+            <ActionButton
+              type="primary"
+              block
+              size="large"
+              onClick={() => navigate('/', { replace: true })}
+              style={{ height: '52px', fontSize: '16px', fontWeight: 600, marginTop: '32px' }}
+            >
+              进入首页
+            </ActionButton>
+          ) : (
+            <StyledTabs
+              activeKey={loginType}
+              onChange={(key) => setLoginType(key as LoginType)}
+              items={tabItems}
+            />
+          )}
         </LoginBox>
       </RightSection>
     </PageContainer>

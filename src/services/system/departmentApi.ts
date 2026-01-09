@@ -18,12 +18,12 @@ export interface DepartmentListParams {
 
 // 部门详情VO
 export interface DepartmentDetailVO {
-  id: number;
+  id: string;
   departmentCode: string;
   departmentName: string;
-  parentId?: number;
+  parentId?: string;
   parentName?: string;
-  leaderId?: number;
+  leaderId?: string;
   leaderName?: string;
   status: CommonStatus;
   sortOrder?: number;
@@ -34,10 +34,10 @@ export interface DepartmentDetailVO {
 
 // 部门列表VO
 export interface DepartmentListVO {
-  id: number;
+  id: string;
   departmentCode: string;
   departmentName: string;
-  parentId?: number;
+  parentId?: string;
   parentName?: string;
   leaderName?: string;
   status: CommonStatus;
@@ -46,7 +46,7 @@ export interface DepartmentListVO {
 
 // 部门树VO
 export interface DepartmentTreeVO {
-  id: number;
+  id: string;
   departmentCode: string;
   departmentName: string;
   status: CommonStatus;
@@ -55,7 +55,7 @@ export interface DepartmentTreeVO {
 
 // 部门选项VO
 export interface DepartmentOptionVO {
-  id: number;
+  id: string;
   departmentCode: string;
   departmentName: string;
 }
@@ -64,8 +64,8 @@ export interface DepartmentOptionVO {
 export interface CreateDepartmentRequest {
   departmentCode: string;
   departmentName: string;
-  parentId?: number;
-  leaderId?: number;
+  parentId?: string;
+  leaderId?: string;
   status?: CommonStatus;
   sortOrder?: number;
   description?: string;
@@ -74,8 +74,8 @@ export interface CreateDepartmentRequest {
 // 更新部门请求
 export interface UpdateDepartmentRequest {
   departmentName?: string;
-  parentId?: number;
-  leaderId?: number;
+  parentId?: string;
+  leaderId?: string;
   sortOrder?: number;
   description?: string;
 }
@@ -86,17 +86,17 @@ export const createDepartment = (data: CreateDepartmentRequest) => {
 };
 
 // 7.2 获取部门详情
-export const getDepartmentById = (id: number) => {
+export const getDepartmentById = (id: string) => {
   return request.get<DepartmentDetailVO>(`${BASE_URL}/${id}`);
 };
 
 // 7.3 更新部门
-export const updateDepartment = (id: number, data: UpdateDepartmentRequest) => {
+export const updateDepartment = (id: string, data: UpdateDepartmentRequest) => {
   return request.put<DepartmentDetailVO>(`${BASE_URL}/${id}`, data);
 };
 
 // 7.4 删除部门
-export const deleteDepartment = (id: number) => {
+export const deleteDepartment = (id: string) => {
   return request.delete(`${BASE_URL}/${id}`);
 };
 
@@ -111,7 +111,7 @@ export const getDepartmentTree = () => {
 };
 
 // 7.7 修改部门状态
-export const updateDepartmentStatus = (id: number, status: CommonStatus) => {
+export const updateDepartmentStatus = (id: string, status: CommonStatus) => {
   return request.patch(`${BASE_URL}/${id}/status`, { status });
 };
 

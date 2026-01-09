@@ -23,7 +23,6 @@ export interface UserInfo {
   userName: string;
   userAvatar: string;
   authTime: number;
-  employeeNo?: string;   // 员工工号(从getUserProfile接口获取)
 }
 
 const TOKEN_KEYS = {
@@ -38,12 +37,10 @@ const TOKEN_KEYS = {
 export class TokenManager {
   /**
    * 存储访问令牌及过期时间
-   * @param token - 访问令牌
-   * @param expiresIn - 过期时间（秒）
    */
   static setAccessToken(token: string, expiresIn: number): void {
     localStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, token);
-    // expiresIn 是相对时间（秒），转换为绝对过期时间（毫秒时间戳）
+    // expiresIn 是多少秒后过期（相对时间），转换为绝对过期时间（毫秒）
     const expiresAt = Date.now() + expiresIn * 1000;
     localStorage.setItem(TOKEN_KEYS.TOKEN_EXPIRES_AT, expiresAt.toString());
     authLogger.info('✅ Access Token已存储，过期时间:', new Date(expiresAt).toLocaleString());
@@ -51,7 +48,6 @@ export class TokenManager {
 
   /**
    * 获取访问令牌（过期返回null）
-   * 每次获取时都会检查是否过期，确保只返回有效token
    */
   static getAccessToken(): string | null {
     const token = localStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
@@ -61,7 +57,6 @@ export class TokenManager {
       return null;
     }
 
-    // 检查是否过期
     if (expiresAt && Date.now() > parseInt(expiresAt, 10)) {
       authLogger.warn('⚠️ Access Token已过期');
       return null;
@@ -187,20 +182,19 @@ export class TokenManager {
   }
 
   /**
-   * 检查令牌是否已过期
-   * @returns {boolean} true=已过期或不存在, false=仍然有效
+   * 检查令牌是否即将过期（5分钟内）
    */
-  static isTokenExpired(): boolean {
+  static isTokenExpiringSoon(): boolean {
     const expiresAt = localStorage.getItem(TOKEN_KEYS.TOKEN_EXPIRES_AT);
     if (!expiresAt) {
-      return true; // 没有过期时间记录，视为已过期
+      return true;
     }
-    return Date.now() > parseInt(expiresAt, 10);
+    const fiveMinutes = 5 * 60 * 1000;
+    return Date.now() + fiveMinutes > parseInt(expiresAt, 10);
   }
 
   /**
    * 检查是否已登录
-   * @returns {boolean} true=已登录（token有效）, false=未登录
    */
   static isLoggedIn(): boolean {
     return !!this.getAccessToken();

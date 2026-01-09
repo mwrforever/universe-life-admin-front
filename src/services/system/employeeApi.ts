@@ -12,14 +12,14 @@ const BASE_URL = '/user/admin/sys-user';
 export interface EmployeeListParams {
   page?: number;
   size?: number;
-  departmentId?: number;
+  departmentId?: string;
   status?: CommonStatus;
   keyword?: string;
 }
 
 // 员工详情VO
 export interface SysUserDetailVO {
-  id: number;
+  id: string;
   employeeNo: string;
   username: string;
   realName?: string;
@@ -28,23 +28,23 @@ export interface SysUserDetailVO {
   avatarUrl?: string;
   gender?: Gender;
   status: CommonStatus;
-  departmentIds?: number[];
+  departmentIds?: string[];
   departments?: DepartmentInfo[];
-  primaryDepartmentId?: number;
+  primaryDepartmentId?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 // 部门信息
 export interface DepartmentInfo {
-  id: number;
+  id: string;
   departmentName: string;
   isPrimary: boolean;
 }
 
 // 员工列表VO
 export interface SysUserListVO {
-  id: number;
+  id: string;
   employeeNo: string;
   username: string;
   realName?: string;
@@ -55,7 +55,7 @@ export interface SysUserListVO {
 
 // 员工选项VO
 export interface SysUserOptionVO {
-  id: number;
+  id: string;
   employeeNo: string;
   realName: string;
 }
@@ -71,8 +71,8 @@ export interface CreateEmployeeRequest {
   avatarUrl?: string;
   gender?: Gender;
   status?: CommonStatus;
-  departmentIds?: number[];
-  primaryDepartmentId?: number;
+  departmentIds?: string[];
+  primaryDepartmentId?: string;
 }
 
 // 更新员工请求
@@ -83,8 +83,8 @@ export interface UpdateEmployeeRequest {
   avatarUrl?: string;
   gender?: Gender;
   status?: CommonStatus;
-  departmentIds?: number[];
-  primaryDepartmentId?: number;
+  departmentIds?: string[];
+  primaryDepartmentId?: string;
 }
 
 // 8.1 创建员工
@@ -93,17 +93,17 @@ export const createEmployee = (data: CreateEmployeeRequest) => {
 };
 
 // 8.2 获取员工详情
-export const getEmployeeById = (id: number) => {
+export const getEmployeeById = (id: string) => {
   return request.get<SysUserDetailVO>(`${BASE_URL}/${id}`);
 };
 
 // 8.3 更新员工
-export const updateEmployee = (id: number, data: UpdateEmployeeRequest) => {
+export const updateEmployee = (id: string, data: UpdateEmployeeRequest) => {
   return request.put<SysUserDetailVO>(`${BASE_URL}/${id}`, data);
 };
 
 // 8.4 删除员工
-export const deleteEmployee = (id: number) => {
+export const deleteEmployee = (id: string) => {
   return request.delete(`${BASE_URL}/${id}`);
 };
 
@@ -113,12 +113,12 @@ export const getEmployeeList = (params: EmployeeListParams) => {
 };
 
 // 8.6 修改员工状态
-export const updateEmployeeStatus = (id: number, status: CommonStatus) => {
+export const updateEmployeeStatus = (id: string, status: CommonStatus) => {
   return request.patch(`${BASE_URL}/${id}/status`, { status });
 };
 
 // 8.7 重置员工密码
-export const resetEmployeePassword = (id: number, newPassword: string) => {
+export const resetEmployeePassword = (id: string, newPassword: string) => {
   return request.put(`${BASE_URL}/${id}/password`, { newPassword });
 };
 

@@ -4,3 +4,5 @@
 
 export { useAuth } from './useAuth';
 export type { UseAuthReturn } from './useAuth';
+
+export { useTablePage } from './useTablePage';

@@ -20,7 +20,7 @@ const generateTrafficData = () => [
 ];
 
 const TrafficChart: React.FC = () => {
-  const { theme, chartColors, isDarkMode } = useTheme();
+  const { theme, chartColors } = useTheme();
 
   // 准备多系列数据
   const transformedData = generateTrafficData().flatMap((item) => [
