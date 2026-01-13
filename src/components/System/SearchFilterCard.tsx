@@ -154,7 +154,9 @@ const ActionBar = styled.div<{ isDark: boolean }>`
     : 'rgba(0, 0, 0, 0.06)'};
 `;
 
-const ActionButton = styled(Button)<{ $variant?: 'primary' | 'secondary'; $isDark?: boolean }>`
+const ActionButton = styled(Button, {
+  shouldForwardProp: (prop) => !['$variant', '$isDark'].includes(prop),
+})<{ $variant?: 'primary' | 'secondary'; $isDark?: boolean }>`
   height: 36px;
   border-radius: 8px;
   font-weight: 500;
@@ -184,7 +186,9 @@ const ActionButton = styled(Button)<{ $variant?: 'primary' | 'secondary'; $isDar
   `}
 `;
 
-const ToggleButton = styled(Button)<{ $isDark: boolean }>`
+const ToggleButton = styled(Button, {
+  shouldForwardProp: (prop) => prop !== '$isDark',
+})<{ $isDark: boolean }>`
   height: 32px;
   border-radius: 8px;
   background: ${props => props.$isDark

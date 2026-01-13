@@ -942,6 +942,37 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipText, setTooltipText] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 根据当前页面计算需要展开的父菜单
+  const getOpenKeys = (pageKey: string): string[] => {
+    // 如果是 system-* 开头的页面，展开 system 菜单
+    if (pageKey.startsWith('system-')) {
+      return ['system'];
+    }
+    // 如果是 order-* 开头的页面，展开 orders 菜单
+    if (pageKey.startsWith('order-')) {
+      return ['orders'];
+    }
+    // dashboard 相关页面
+    if (pageKey === 'overview' || pageKey === 'analytics') {
+      return ['dashboard'];
+    }
+    return [];
+  };
+  
+  const [openKeys, setOpenKeys] = useState<string[]>(() => getOpenKeys(currentPage));
+  
+  // 当 currentPage 变化时，更新展开的菜单
+  useEffect(() => {
+    const newOpenKeys = getOpenKeys(currentPage);
+    if (newOpenKeys.length > 0 && !collapsed) {
+      setOpenKeys(prev => {
+        // 合并新的展开项，避免关闭用户手动展开的菜单
+        const merged = [...new Set([...prev, ...newOpenKeys])];
+        return merged;
+      });
+    }
+  }, [currentPage, collapsed]);
 
   // 菜单数据 - 添加子菜单结构
   const menuItems: MenuItem[] = [
@@ -1269,6 +1300,8 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
           isDark={isDarkMode}
           mode="inline"
           selectedKeys={[currentPage]}
+          openKeys={collapsed ? [] : openKeys}
+          onOpenChange={(keys) => setOpenKeys(keys as string[])}
           items={menuItems as any}
           onClick={handleMenuClick}
         />

@@ -112,22 +112,28 @@ export const sendVerifyCode = (data: SendCodeRequest) => {
  * POST /oauth2/token?grant_type=refresh_token
  * @throws {Error} 当Token刷新失败时抛出异常
  */
-export const refreshToken = async (refreshTokenValue: string) => {
-  // 直接调用OAuth2Service，它现在会抛出异常
+export const refreshToken = async (_refreshTokenValue: string) => {
+  // 调用OAuth2Service进行刷新，它会自动存储新的token
   await OAuth2Service.refreshAccessToken();
 
-  // 返回兼容的响应格式（供现有代码使用）
+  // 从 TokenManager 获取刷新后的 token（OAuth2Service 已经存储了）
   const accessToken = TokenManager.getAccessToken();
-  const refreshToken = TokenManager.getRefreshToken();
+  const refreshTokenStored = TokenManager.getRefreshToken();
 
+  if (!accessToken) {
+    throw new Error('Token刷新后无法获取新的accessToken');
+  }
+
+  // 返回兼容的响应格式（供现有代码使用）
+  // 注意：这里不需要再调用 saveLoginData，因为 OAuth2Service 已经存储了
   return {
     code: 1,
     message: 'success',
     data: {
-      accessToken: accessToken!,
-      refreshToken: refreshToken!,
+      accessToken: accessToken,
+      refreshToken: refreshTokenStored || '',
       expiresIn: '7200', // 2小时，转换为字符串
-      tokenType: 'Bearer', // 添加 tokenType 字段
+      tokenType: 'Bearer',
     },
     timestamp: Date.now(),
   } as RefreshTokenResponse;

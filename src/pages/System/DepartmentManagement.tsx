@@ -3,11 +3,8 @@ import {
   Button,
   Select,
   Space,
-  Tag,
   Modal,
   Form,
-  message,
-  Popconfirm,
   TreeSelect,
   Tree,
   Input,
@@ -15,6 +12,7 @@ import {
   Row,
   Col,
 } from 'antd';
+import { showSuccessMessage } from '../../utils/antdStatic';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -24,10 +22,11 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import styled from '@emotion/styled';
 import { departmentApi, employeeApi } from '../../services/system';
-import type { DepartmentListVO, DepartmentListParams, DepartmentTreeVO, SysUserOptionVO } from '../../services/system';
+import type { DepartmentListVO, DepartmentTreeVO, SysUserOptionVO } from '../../services/system';
 import { CommonStatus } from '../../services/system';
-import { SearchFilterCard, PageContainer, DataTable, FormField, StyledInput, StyledSelect } from '../../components/System';
+import { SearchFilterCard, PageContainer, DataTable, FormField, StyledInput, StyledSelect, EnumDisplay, commonStatusConfig } from '../../components/System';
 import { useTheme } from '../../context/ThemeContext';
+import { useTableLocalRefresh } from '../../hooks/useTableLocalRefresh';
 
 const TreeCard = styled.div<{ isDark: boolean }>`
   border-radius: 16px;
@@ -53,10 +52,6 @@ const TreeContent = styled.div`
 const DepartmentManagement: React.FC = () => {
   const { isDarkMode } = useTheme();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<DepartmentListVO[]>([]);
-  const [total, setTotal] = useState(0);
-  const [params, setParams] = useState<DepartmentListParams>({ page: 1, size: 10 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDept, setEditingDept] = useState<DepartmentListVO | null>(null);
   const [form] = Form.useForm();
@@ -65,18 +60,49 @@ const DepartmentManagement: React.FC = () => {
   const [employeeOptions, setEmployeeOptions] = useState<SysUserOptionVO[]>([]);
   const [treeDrawerVisible, setTreeDrawerVisible] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await departmentApi.getDepartmentList(params);
-      setData(res.data?.records || []);
-      setTotal(res.data?.total || 0);
-    } catch (error) {
-      message.error('获取部门列表失败');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 使用表格局部刷新 Hook
+  const {
+    displayData,
+    loading,
+    pagination,
+    handleDelete: hookHandleDelete,
+    handleUpdate: hookHandleUpdate,
+    handleCreate: hookHandleCreate,
+    handlePageChange,
+    handleFilterChange,
+    refresh,
+  } = useTableLocalRefresh<DepartmentListVO>({
+    primaryKey: 'id',
+    spareCount: 5,
+    filterValidator: (item, filters) => {
+      if (filters.keyword) {
+        const keyword = filters.keyword.toLowerCase();
+        const matchCode = item.deptCode?.toLowerCase().includes(keyword);
+        const matchName = item.deptName?.toLowerCase().includes(keyword);
+        if (!matchCode && !matchName) return false;
+      }
+      if (filters.status !== undefined && item.status !== filters.status) {
+        return false;
+      }
+      return true;
+    },
+    fetchList: async (params) => {
+      const res = await departmentApi.getDepartmentList(params) as any;
+      return res.data;
+    },
+    deleteItem: async (id) => {
+      await departmentApi.deleteDepartment(id);
+    },
+    updateItem: async (id, data) => {
+      await departmentApi.updateDepartment(id, data);
+      const res = await departmentApi.getDepartmentById(id) as any;
+      return res.data as DepartmentListVO;
+    },
+    createItem: async (data) => {
+      await departmentApi.createDepartment(data as any);
+      return null as any;
+    },
+  });
 
   const fetchTree = async () => {
     try {
@@ -97,18 +123,26 @@ const DepartmentManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
     fetchTree();
     fetchEmployeeOptions();
-  }, [params]);
+  }, []);
 
-  const handleSearch = (values: any) => {
-    setParams({ ...params, ...values, page: 1 });
+  // 计算活跃筛选条件数量
+  const filterCount = useMemo(() => {
+    return Object.values(searchValues).filter(v => v !== undefined && v !== '').length;
+  }, [searchValues]);
+
+  const handleSearchChange = (key: string, value: any) => {
+    setSearchValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    handleFilterChange(searchValues, true);
   };
 
   const handleReset = () => {
     setSearchValues({});
-    setParams({ page: 1, size: 10 });
+    handleFilterChange({});
   };
 
   const handleEdit = async (record: DepartmentListVO) => {
@@ -118,7 +152,7 @@ const DepartmentManagement: React.FC = () => {
       form.setFieldsValue(res.data);
       setModalVisible(true);
     } catch (error) {
-      message.error('获取部门详情失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -133,22 +167,21 @@ const DepartmentManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await departmentApi.deleteDepartment(id);
-      message.success('删除成功');
-      fetchData();
+      await hookHandleDelete(id);
+      showSuccessMessage('部门删除成功');
       fetchTree();
     } catch (error) {
-      message.error('删除失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
   const handleStatusChange = async (id: string, status: number) => {
     try {
       await departmentApi.updateDepartmentStatus(id, status as CommonStatus);
-      message.success('状态更新成功');
-      fetchData();
+      showSuccessMessage('部门状态更新成功');
+      await hookHandleUpdate(id, { status: status as CommonStatus } as Partial<DepartmentListVO>);
     } catch (error) {
-      message.error('状态更新失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -156,17 +189,17 @@ const DepartmentManagement: React.FC = () => {
     try {
       const values = await form.validateFields();
       if (editingDept) {
-        await departmentApi.updateDepartment(editingDept.id, values);
-        message.success('更新成功');
+        await hookHandleUpdate(editingDept.id, values);
+        showSuccessMessage('部门信息更新成功');
       } else {
-        await departmentApi.createDepartment(values);
-        message.success('创建成功');
+        await hookHandleCreate(values);
+        showSuccessMessage('部门创建成功');
+        refresh();
       }
       setModalVisible(false);
-      fetchData();
       fetchTree();
     } catch (error) {
-      message.error('操作失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -182,7 +215,7 @@ const DepartmentManagement: React.FC = () => {
 
   const convertTreeData = (nodes: DepartmentTreeVO[]): any[] => {
     return nodes.map((node) => ({
-      title: node.departmentName,
+      title: node.deptName,
       key: node.id,
       value: node.id,
       children: node.children ? convertTreeData(node.children) : [],
@@ -192,13 +225,13 @@ const DepartmentManagement: React.FC = () => {
   const columns: ColumnsType<DepartmentListVO> = [
     {
       title: '部门编码',
-      dataIndex: 'departmentCode',
-      key: 'departmentCode',
+      dataIndex: 'deptCode',
+      key: 'deptCode',
     },
     {
       title: '部门名称',
-      dataIndex: 'departmentName',
-      key: 'departmentName',
+      dataIndex: 'deptName',
+      key: 'deptName',
     },
     {
       title: '上级部门',
@@ -223,17 +256,19 @@ const DepartmentManagement: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 80,
-      render: (status: number) => (
-        <Tag color={status === 1 ? 'success' : 'default'}>{status === 1 ? '启用' : '禁用'}</Tag>
+      render: (status: CommonStatus) => (
+        <EnumDisplay value={status} config={commonStatusConfig} size="small" />
       ),
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 180,
       render: (_, record) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          <Tooltip title="编辑">
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+          </Tooltip>
           <Select
             size="small"
             value={record.status}
@@ -241,21 +276,14 @@ const DepartmentManagement: React.FC = () => {
             onChange={(value) => handleStatusChange(record.id, value)}
             options={statusOptions}
           />
-          <Popconfirm title="确定删除该部门吗？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Tooltip title="删除">
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
-  const filterCount = useMemo(() => {
-    return Object.values(searchValues).filter(v => v !== undefined && v !== '').length;
-  }, [searchValues]);
-
-  const handleSearchChange = (key: string, value: any) => {
-    setSearchValues(prev => ({ ...prev, [key]: value }));
-  };
 
   return (
     <PageContainer
@@ -281,8 +309,9 @@ const DepartmentManagement: React.FC = () => {
         subtitle="根据条件快速查找部门"
         icon={<ApartmentOutlined />}
         accentColor="#1677ff"
-        onSearch={() => handleSearch(searchValues)}
+        onSearch={handleSearch}
         onReset={handleReset}
+        onRefresh={refresh}
         filterCount={filterCount}
       >
         <FormField label="部门名称">
@@ -310,19 +339,19 @@ const DepartmentManagement: React.FC = () => {
       <DataTable<DepartmentListVO>
         title="部门列表"
         columns={columns}
-        dataSource={data}
+        dataSource={displayData}
         rowKey="id"
         loading={loading}
         onAdd={handleAdd}
         addButtonText="新增部门"
         pagination={{
-          current: params.page,
-          pageSize: params.size,
-          total,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (t: number) => `共 ${t} 条`,
-          onChange: (page: number, size: number) => setParams({ ...params, page, size }),
+          onChange: handlePageChange,
         }}
       />
 
@@ -361,12 +390,12 @@ const DepartmentManagement: React.FC = () => {
         <Form form={form} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="departmentCode" label="部门编码" rules={[{ required: true, message: '请输入部门编码' }]}>
+              <Form.Item name="deptCode" label="部门编码" rules={[{ required: true, message: '请输入部门编码' }]}>
                 <Input placeholder="请输入部门编码" disabled={!!editingDept} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="departmentName" label="部门名称" rules={[{ required: true, message: '请输入部门名称' }]}>
+              <Form.Item name="deptName" label="部门名称" rules={[{ required: true, message: '请输入部门名称' }]}>
                 <Input placeholder="请输入部门名称" />
               </Form.Item>
             </Col>

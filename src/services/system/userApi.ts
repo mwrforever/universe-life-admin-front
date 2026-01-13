@@ -13,11 +13,11 @@ const BASE_URL = '/user/admin';
 export interface UserListParams {
   page?: number;
   size?: number;
-  username?: string;
-  status?: string;
-  gender?: number;
-  startTime?: string;
-  endTime?: string;
+  username?: string;       // 用户名模糊查询
+  status?: UserStatus;
+  gender?: Gender;         // 性别筛选
+  startTime?: string;      // 创建开始时间
+  endTime?: string;        // 创建结束时间
 }
 
 // 用户认证类型
@@ -142,8 +142,8 @@ export interface PasswordRequest {
 
 // 重置密码请求参数
 export interface ResetPasswordRequest {
-  adminPassword: string;
-  newPassword: string;
+  adminPassword: string;  // 管理员密码，必填
+  newPassword: string;    // 新密码，必填
 }
 
 // 更新状态请求

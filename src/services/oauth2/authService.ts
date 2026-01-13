@@ -17,9 +17,10 @@ const OAUTH2_CONFIG = {
   ACCESS_TOKEN_EXPIRES_IN: 3600,
 };
 
+// 使用相对路径，通过 Vite 代理访问后端，避免 CORS 问题
 const OAUTH2_ENDPOINTS = {
-  TOKEN: `${import.meta.env.VITE_OAUTH2_ISSUER || 'http://localhost:8099'}/oauth2/token`,
-  REVOKE: `${import.meta.env.VITE_OAUTH2_ISSUER || 'http://localhost:8099'}/oauth2/revoke`,
+  TOKEN: '/oauth2/token',
+  REVOKE: '/oauth2/revoke',
 };
 
 export class OAuth2Service {
@@ -35,6 +36,16 @@ export class OAuth2Service {
     }
 
     authLogger.info('🔄 开始刷新访问Token...');
+    authLogger.info('📤 请求URL:', OAUTH2_ENDPOINTS.TOKEN);
+    authLogger.info('📤 client_id:', OAUTH2_CONFIG.CLIENT_ID);
+
+    const requestBody = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: OAUTH2_CONFIG.CLIENT_ID,
+    });
+
+    authLogger.info('📤 请求体:', requestBody.toString());
 
     try {
       const response = await fetch(OAUTH2_ENDPOINTS.TOKEN, {
@@ -43,16 +54,22 @@ export class OAuth2Service {
           'Content-Type': 'application/x-www-form-urlencoded',
           Accept: 'application/json',
         },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: OAUTH2_CONFIG.CLIENT_ID,
-        }),
+        body: requestBody,
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         authLogger.error(`❌ Token刷新请求失败: ${response.status}`, errorText);
+        authLogger.error('❌ 响应头:', Object.fromEntries(response.headers.entries()));
+        
+        // 尝试解析错误响应
+        try {
+          const errorJson = JSON.parse(errorText);
+          authLogger.error('❌ 错误详情:', errorJson);
+        } catch {
+          // 不是 JSON 格式，忽略
+        }
+        
         TokenManager.clearTokens();
 
         // 根据 HTTP 状态码转换为业务错误

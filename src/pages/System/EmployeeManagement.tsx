@@ -3,55 +3,101 @@ import {
   Button,
   Select,
   Space,
-  Tag,
   Modal,
   Form,
-  message,
-  Popconfirm,
   TreeSelect,
   Input,
+  Tooltip,
   Row,
   Col,
 } from 'antd';
+import { showSuccessMessage } from '../../utils/antdStatic';
 import {
   EditOutlined,
   DeleteOutlined,
   LockOutlined,
   IdcardOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { employeeApi, departmentApi, roleApi } from '../../services/system';
-import type { SysUserListVO, EmployeeListParams, DepartmentTreeVO, RoleOptionVO } from '../../services/system';
+import type { SysUserListVO, DepartmentTreeVO, RoleOptionVO } from '../../services/system';
 import { CommonStatus, Gender } from '../../services/system';
-import { SearchFilterCard, PageContainer, DataTable, FormField, StyledInput, StyledSelect, AvatarUpload } from '../../components/System';
+import { SearchFilterCard, PageContainer, DataTable, FormField, StyledInput, StyledSelect, AvatarUpload, EnumDisplay, GenderDisplay, commonStatusConfig } from '../../components/System';
+import { ThumbnailImage } from '../../components/common/ThumbnailImage';
 import { useTheme } from '../../context/ThemeContext';
+import { useTableLocalRefresh } from '../../hooks/useTableLocalRefresh';
+import { generateDefaultPassword } from '../../utils/passwordGenerator';
 
 const EmployeeManagement: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<SysUserListVO[]>([]);
-  const [total, setTotal] = useState(0);
-  const [params, setParams] = useState<EmployeeListParams>({ page: 1, size: 10 });
+  const [searchForm] = Form.useForm();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<SysUserListVO | null>(null);
   const [form] = Form.useForm();
   const [deptTreeData, setDeptTreeData] = useState<DepartmentTreeVO[]>([]);
   const [roleOptions, setRoleOptions] = useState<RoleOptionVO[]>([]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await employeeApi.getEmployeeList(params);
-      setData(res.data?.records || []);
-      setTotal(res.data?.total || 0);
-    } catch (error) {
-      message.error('获取员工列表失败');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 重置密码 Modal 相关状态
+  const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
+  const [resetPasswordId, setResetPasswordId] = useState<string | null>(null);
+  const [resetPasswordForm] = Form.useForm();
 
+  // 筛选条件状态
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+
+  // 使用表格局部刷新 Hook
+  const {
+    displayData,
+    loading,
+    pagination,
+    handleDelete: hookHandleDelete,
+    handleUpdate: hookHandleUpdate,
+    handleCreate: hookHandleCreate,
+    handlePageChange,
+    handleFilterChange,
+    refresh,
+  } = useTableLocalRefresh<SysUserListVO>({
+    primaryKey: 'id',
+    spareCount: 5,
+    filterValidator: (item, filters) => {
+      // 关键词模糊匹配
+      if (filters.keyword) {
+        const keyword = filters.keyword.toLowerCase();
+        const matchName = item.realName?.toLowerCase().includes(keyword);
+        const matchNo = item.employeeNo?.toLowerCase().includes(keyword);
+        const matchUsername = item.username?.toLowerCase().includes(keyword);
+        if (!matchName && !matchNo && !matchUsername) {
+          return false;
+        }
+      }
+      // 状态精确匹配
+      if (filters.status !== undefined && item.status !== filters.status) {
+        return false;
+      }
+      return true;
+    },
+    fetchList: async (params) => {
+      const res = await employeeApi.getEmployeeList(params) as any;
+      return res.data;
+    },
+    deleteItem: async (id) => {
+      await employeeApi.deleteEmployee(id);
+    },
+    updateItem: async (id, data) => {
+      await employeeApi.updateEmployee(id, data);
+      // 重新获取详情返回完整数据
+      const res = await employeeApi.getEmployeeById(id) as any;
+      return res.data as SysUserListVO;
+    },
+    createItem: async (data) => {
+      await employeeApi.createEmployee(data as any);
+      // 创建后刷新列表获取新数据
+      return null as any;
+    },
+  });
+
+  // 获取部门树和角色选项
   const fetchDeptTree = async () => {
     try {
       const res = await departmentApi.getDepartmentTree();
@@ -71,28 +117,37 @@ const EmployeeManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
     fetchDeptTree();
     fetchRoleOptions();
-  }, [params]);
+  }, []);
 
-  const handleSearch = (values: any) => {
-    setParams({ ...params, ...values, page: 1 });
+  // 计算活跃筛选条件数量
+  const activeSearchCount = useMemo(() => {
+    return Object.values(searchValues).filter(v => v !== undefined && v !== null && v !== '').length;
+  }, [searchValues]);
+
+  const handleSearchChange = (key: string, value: any) => {
+    setSearchValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    handleFilterChange(searchValues, true);
   };
 
   const handleReset = () => {
+    searchForm.resetFields();
     setSearchValues({});
-    setParams({ page: 1, size: 10 });
+    handleFilterChange({});
   };
 
   const handleEdit = async (record: SysUserListVO) => {
     try {
-      const res = await employeeApi.getEmployeeById(record.id);
+      const res = await employeeApi.getEmployeeById(record.id) as any;
       setEditingEmployee(record);
       form.setFieldsValue(res.data);
       setModalVisible(true);
     } catch (error) {
-      message.error('获取员工详情失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -104,47 +159,65 @@ const EmployeeManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await employeeApi.deleteEmployee(id);
-      message.success('删除成功');
-      fetchData();
+      await hookHandleDelete(id);
+      showSuccessMessage('删除成功');
     } catch (error) {
-      message.error('删除失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
   const handleStatusChange = async (id: string, status: number) => {
     try {
       await employeeApi.updateEmployeeStatus(id, status as CommonStatus);
-      message.success('状态更新成功');
-      fetchData();
+      showSuccessMessage('状态更新成功');
+      await hookHandleUpdate(id, { status: status as CommonStatus } as Partial<SysUserListVO>);
     } catch (error) {
-      message.error('状态更新失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
-  const handleResetPassword = async (id: string) => {
+  const handleResetPassword = (id: string) => {
+    const newPassword = generateDefaultPassword();
+    setResetPasswordId(id);
+    resetPasswordForm.setFieldsValue({ newPassword });
+    setResetPasswordVisible(true);
+  };
+
+  const handleResetPasswordSubmit = async () => {
     try {
-      await employeeApi.resetEmployeePassword(id, '123456');
-      message.success('密码重置成功，默认密码：123456');
+      const values = await resetPasswordForm.validateFields();
+      await employeeApi.resetEmployeePassword(resetPasswordId!, values.newPassword);
+      showSuccessMessage('密码重置成功');
+      setResetPasswordVisible(false);
+      resetPasswordForm.resetFields();
     } catch (error) {
-      message.error('密码重置失败');
+      // 错误已由 request 拦截器处理
     }
+  };
+
+  const handleResetPasswordCancel = () => {
+    setResetPasswordVisible(false);
+    resetPasswordForm.resetFields();
+    setResetPasswordId(null);
   };
 
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
       if (editingEmployee) {
-        await employeeApi.updateEmployee(editingEmployee.id, values);
-        message.success('更新成功');
+        await hookHandleUpdate(editingEmployee.id, values);
+        showSuccessMessage('员工信息更新成功');
       } else {
-        await employeeApi.createEmployee(values);
-        message.success('创建成功');
+        await hookHandleCreate({
+          ...values,
+          password: values.password || '123456',
+        });
+        showSuccessMessage('员工创建成功');
+        refresh();
       }
       setModalVisible(false);
-      fetchData();
     } catch (error) {
-      message.error('操作失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -161,7 +234,7 @@ const EmployeeManagement: React.FC = () => {
 
   const convertTreeData = (nodes: DepartmentTreeVO[]): any[] => {
     return nodes.map((node) => ({
-      title: node.departmentName,
+      title: node.deptName,
       value: node.id,
       children: node.children ? convertTreeData(node.children) : [],
     }));
@@ -169,14 +242,26 @@ const EmployeeManagement: React.FC = () => {
 
   const columns: ColumnsType<SysUserListVO> = [
     {
-      title: '工号',
-      dataIndex: 'employeeNo',
-      key: 'employeeNo',
+      title: '头像',
+      dataIndex: 'avatarUrl',
+      key: 'avatarUrl',
+      width: 80,
+      render: (url: string) => (
+        <ThumbnailImage
+          src={url}
+          width={40}
+          height={40}
+          circle
+          thumbnailSize="small"
+          fallback={<UserOutlined style={{ fontSize: 20, color: '#8c8c8c' }} />}
+        />
+      ),
     },
     {
-      title: '姓名',
-      dataIndex: 'realName',
-      key: 'realName',
+      title: '员工编号',
+      dataIndex: 'employeeNo',
+      key: 'employeeNo',
+      width: 120,
     },
     {
       title: '用户名',
@@ -184,42 +269,55 @@ const EmployeeManagement: React.FC = () => {
       key: 'username',
     },
     {
-      title: '部门',
-      dataIndex: 'departmentNames',
-      key: 'departmentNames',
-      render: (names: string[]) => names?.join(', ') || '-',
+      title: '姓名',
+      dataIndex: 'realName',
+      key: 'realName',
     },
     {
-      title: '角色',
-      dataIndex: 'roleNames',
-      key: 'roleNames',
-      render: (names: string[]) => (
-        <Space size={4} wrap>
-          {names?.map((name, index) => (
-            <Tag key={index} color="blue">{name}</Tag>
-          )) || '-'}
-        </Space>
-      ),
+      title: '性别',
+      dataIndex: 'gender',
+      key: 'gender',
+      width: 80,
+      render: (gender: Gender) => <GenderDisplay value={gender} />,
+    },
+    {
+      title: '主部门',
+      dataIndex: 'primaryDeptName',
+      key: 'primaryDeptName',
+      render: (text: string) => text || '-',
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       width: 80,
-      render: (status: number) => (
-        <Tag color={status === 1 ? 'success' : 'default'}>{status === 1 ? '启用' : '禁用'}</Tag>
+      render: (status: CommonStatus) => (
+        <EnumDisplay value={status} config={commonStatusConfig} size="small" />
       ),
+    },
+    {
+      title: '最后登录',
+      dataIndex: 'lastLoginAt',
+      key: 'lastLoginAt',
+      width: 180,
     },
     {
       title: '操作',
       key: 'action',
-      width: 240,
+      width: 200,
       render: (_, record) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-          <Popconfirm title="确定重置密码吗？" onConfirm={() => handleResetPassword(record.id)}>
-            <Button type="link" size="small" icon={<LockOutlined />}>重置密码</Button>
-          </Popconfirm>
+          <Tooltip title="编辑">
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+          </Tooltip>
+          <Tooltip title="重置密码">
+            <Button
+              type="link"
+              size="small"
+              icon={<LockOutlined />}
+              onClick={() => handleResetPassword(record.id)}
+            />
+          </Tooltip>
           <Select
             size="small"
             value={record.status}
@@ -227,26 +325,25 @@ const EmployeeManagement: React.FC = () => {
             onChange={(value) => handleStatusChange(record.id, value)}
             options={statusOptions}
           />
-          <Popconfirm title="确定删除该员工吗？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Tooltip title="删除">
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.id)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
-  const filterCount = useMemo(() => {
-    return Object.values(searchValues).filter(v => v !== undefined && v !== '').length;
-  }, [searchValues]);
-
-  const handleSearchChange = (key: string, value: any) => {
-    setSearchValues(prev => ({ ...prev, [key]: value }));
-  };
 
   return (
     <PageContainer
       title="员工管理"
-      subtitle="管理平台内部员工账号和权限"
+      subtitle="管理平台员工账号和权限"
       icon={<IdcardOutlined />}
       breadcrumb={[
         { title: '系统模块' },
@@ -258,38 +355,39 @@ const EmployeeManagement: React.FC = () => {
         subtitle="根据条件快速查找员工"
         icon={<IdcardOutlined />}
         accentColor="#722ed1"
-        onSearch={() => handleSearch(searchValues)}
+        onSearch={handleSearch}
         onReset={handleReset}
-        filterCount={filterCount}
+        onRefresh={refresh}
+        filterCount={activeSearchCount}
       >
         <FormField label="关键词">
           <StyledInput
             isDark={isDarkMode}
-            placeholder="姓名/工号/用户名"
-            value={searchValues.keyword}
-            onChange={e => handleSearchChange('keyword', e.target.value)}
+            placeholder="员工编号/用户名/姓名"
+            value={searchValues.keyword as string}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange('keyword', e.target.value)}
             allowClear
-          />
-        </FormField>
-        <FormField label="所属部门">
-          <TreeSelect
-            placeholder="请选择部门"
-            treeData={convertTreeData(deptTreeData)}
-            value={searchValues.departmentId}
-            onChange={v => handleSearchChange('departmentId', v)}
-            allowClear
-            treeDefaultExpandAll
-            style={{ width: '100%' }}
           />
         </FormField>
         <FormField label="状态">
           <StyledSelect
             isDark={isDarkMode}
             placeholder="请选择状态"
-            value={searchValues.status}
-            onChange={v => handleSearchChange('status', v)}
+            value={searchValues.status as any}
+            onChange={(v: any) => handleSearchChange('status', v)}
             options={statusOptions}
             allowClear
+            style={{ width: '100%' }}
+          />
+        </FormField>
+        <FormField label="部门">
+          <TreeSelect
+            placeholder="请选择部门"
+            treeData={convertTreeData(deptTreeData)}
+            value={searchValues.departmentId}
+            onChange={(v) => handleSearchChange('departmentId', v)}
+            allowClear
+            treeDefaultExpandAll
             style={{ width: '100%' }}
           />
         </FormField>
@@ -298,19 +396,19 @@ const EmployeeManagement: React.FC = () => {
       <DataTable<SysUserListVO>
         title="员工列表"
         columns={columns}
-        dataSource={data}
+        dataSource={displayData}
         rowKey="id"
         loading={loading}
         onAdd={handleAdd}
         addButtonText="新增员工"
         pagination={{
-          current: params.page,
-          pageSize: params.size,
-          total,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (t: number) => `共 ${t} 条`,
-          onChange: (page: number, size: number) => setParams({ ...params, page, size }),
+          onChange: handlePageChange,
         }}
       />
 
@@ -319,8 +417,10 @@ const EmployeeManagement: React.FC = () => {
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
-        destroyOnHidden
-        width={760}
+        width={720}
+        styles={{
+          body: { padding: '24px 24px 8px' },
+        }}
       >
         <Form form={form} layout="vertical">
           <Row gutter={24}>
@@ -331,91 +431,127 @@ const EmployeeManagement: React.FC = () => {
             </Col>
             <Col flex="1">
               <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="employeeNo" label="工号" rules={[{ required: true, message: '请输入工号' }]}>
-                    <Input placeholder="请输入工号" disabled={!!editingEmployee} />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="realName" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
-                    <Input placeholder="请输入姓名" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
+                <Col span={12}>
                   <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
                     <Input placeholder="请输入用户名" disabled={!!editingEmployee} />
                   </Form.Item>
                 </Col>
-              </Row>
-              <Row gutter={16}>
-                {!editingEmployee && (
-                  <Col span={8}>
+                <Col span={12}>
+                  {!editingEmployee ? (
                     <Form.Item name="password" label="密码">
                       <Input.Password placeholder="默认密码：123456" />
                     </Form.Item>
-                  </Col>
-                )}
-                <Col span={8}>
+                  ) : (
+                    <Form.Item name="realName" label="姓名">
+                      <Input placeholder="请输入姓名" />
+                    </Form.Item>
+                  )}
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  {!editingEmployee ? (
+                    <Form.Item name="realName" label="姓名">
+                      <Input placeholder="请输入姓名" />
+                    </Form.Item>
+                  ) : (
+                    <Form.Item name="phone" label="手机号">
+                      <Input placeholder="请输入手机号" />
+                    </Form.Item>
+                  )}
+                </Col>
+                <Col span={12}>
                   <Form.Item name="gender" label="性别">
                     <Select placeholder="请选择性别" options={genderOptions} />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
-                  <Form.Item name="status" label="状态">
-                    <Select placeholder="请选择状态" options={statusOptions} />
-                  </Form.Item>
-                </Col>
-                {editingEmployee && (
-                  <Col span={8}>
-                    <Form.Item name="phone" label="手机号">
-                      <Input placeholder="请输入手机号" />
-                    </Form.Item>
-                  </Col>
-                )}
               </Row>
             </Col>
           </Row>
           <Row gutter={16}>
-            {!editingEmployee && (
-              <Col span={12}>
+            <Col span={12}>
+              {!editingEmployee && (
                 <Form.Item name="phone" label="手机号">
                   <Input placeholder="请输入手机号" />
                 </Form.Item>
-              </Col>
-            )}
-            <Col span={editingEmployee ? 24 : 12}>
-              <Form.Item name="email" label="邮箱">
-                <Input placeholder="请输入邮箱" />
+              )}
+              {editingEmployee && (
+                <Form.Item name="email" label="邮箱">
+                  <Input placeholder="请输入邮箱" />
+                </Form.Item>
+              )}
+            </Col>
+            <Col span={12}>
+              <Form.Item name="status" label="状态">
+                <Select placeholder="请选择状态" options={statusOptions} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="departmentIds" label="所属部门">
+              <Form.Item name="primaryDepartmentId" label="主部门">
                 <TreeSelect
-                  placeholder="请选择部门"
+                  placeholder="请选择主部门"
                   treeData={convertTreeData(deptTreeData)}
                   allowClear
-                  multiple
                   treeDefaultExpandAll
-                  treeCheckable
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="roleIds" label="角色">
-                <Select
-                  placeholder="请选择角色"
-                  mode="multiple"
+              <Form.Item name="departmentIds" label="所属部门">
+                <TreeSelect
+                  placeholder="请选择所属部门"
+                  treeData={convertTreeData(deptTreeData)}
                   allowClear
-                  options={roleOptions.map((role) => ({
-                    label: role.roleName,
-                    value: role.id,
-                  }))}
+                  treeDefaultExpandAll
+                  multiple
                 />
               </Form.Item>
             </Col>
           </Row>
+        </Form>
+      </Modal>
+
+      {/* 重置密码 Modal */}
+      <Modal
+        title="重置员工密码"
+        open={resetPasswordVisible}
+        onOk={handleResetPasswordSubmit}
+        onCancel={handleResetPasswordCancel}
+        width={480}
+        styles={{
+          body: { padding: '24px 24px 8px' },
+        }}
+      >
+        <Form form={resetPasswordForm} layout="vertical">
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: '请输入新密码' },
+              { min: 6, message: '密码长度至少6位' },
+            ]}
+            extra="系统已自动生成随机密码，可修改"
+          >
+            <Input.Password placeholder="请输入新密码" />
+          </Form.Item>
+
+          <div style={{
+            marginTop: '8px',
+            padding: '12px',
+            backgroundColor: isDarkMode ? '#1f1f1f' : '#f5f5f5',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: isDarkMode ? '#d9d9d9' : '#666',
+          }}>
+            <div style={{ marginBottom: '4px' }}>
+              <strong>⚠️ 安全提示：</strong>
+            </div>
+            <div>• 重置后员工需要使用新密码登录</div>
+            <div>• 建议告知员工通过安全方式获取新密码</div>
+            <div>• 员工首次登录后建议修改密码</div>
+          </div>
         </Form>
       </Modal>
     </PageContainer>

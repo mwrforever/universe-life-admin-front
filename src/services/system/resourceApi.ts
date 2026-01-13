@@ -42,8 +42,10 @@ export interface ResourceListVO {
   resourceName: string;
   resourceType: ResourceType;
   serviceName?: string;
+  urlPattern?: string;
+  httpMethod?: string;
   status: CommonStatus;
-  sortOrder?: number;
+  createdAt: string;
 }
 
 // 资源树VO
@@ -52,7 +54,7 @@ export interface ResourceTreeVO {
   resourceCode: string;
   resourceName: string;
   resourceType: ResourceType;
-  status: CommonStatus;
+  checked?: boolean;
   children?: ResourceTreeVO[];
 }
 
@@ -84,7 +86,7 @@ export interface UpdateResourceRequest {
 
 // 3.1 创建资源
 export const createResource = (data: CreateResourceRequest) => {
-  return request.post<ResourceDetailVO>(BASE_URL, data);
+  return request.post<void>(BASE_URL, data);
 };
 
 // 3.2 获取资源详情
@@ -94,7 +96,7 @@ export const getResourceById = (id: string) => {
 
 // 3.3 更新资源
 export const updateResource = (id: string, data: UpdateResourceRequest) => {
-  return request.put<ResourceDetailVO>(`${BASE_URL}/${id}`, data);
+  return request.put<void>(`${BASE_URL}/${id}`, data);
 };
 
 // 3.4 删除资源

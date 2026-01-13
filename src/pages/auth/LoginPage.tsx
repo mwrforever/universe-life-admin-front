@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Tabs, message, theme } from 'antd';
+import { Form, Input, Button, Tabs, theme } from 'antd';
 import {
   UserOutlined,
   LockOutlined,
@@ -19,6 +19,7 @@ import {
 import styled from '@emotion/styled';
 import { authApi, TokenManager, UserAuthType, CaptchaUsageType } from '@/services/auth';
 import { authLogger } from '@/utils/logger';
+import { showSuccessMessage, showWarningMessage } from '@/utils/antdStatic';
 
 type LoginType = 'password' | 'code';
 
@@ -402,7 +403,7 @@ const LoginPage: React.FC = () => {
       }
 
       authLogger.info('✅ 密码登录成功');
-      message.success('欢迎回来！');
+      showSuccessMessage('欢迎回来！');
 
       // ✅ 优化：使用setTimeout确保token保存完成后再导航
       // 避免ProtectedRoute读取到旧的认证状态
@@ -444,7 +445,7 @@ const LoginPage: React.FC = () => {
       }
 
       authLogger.info('✅ 验证码登录成功');
-      message.success('欢迎回来！');
+      showSuccessMessage('欢迎回来！');
 
       // ✅ 优化：使用setTimeout确保token保存完成后再导航
       // 避免ProtectedRoute读取到旧的认证状态
@@ -463,7 +464,7 @@ const LoginPage: React.FC = () => {
     try {
       const identification = codeForm.getFieldValue('identification');
       if (!identification) {
-        message.warning('请先输入手机号或邮箱');
+        showWarningMessage('请先输入手机号或邮箱');
         return;
       }
 
@@ -471,7 +472,7 @@ const LoginPage: React.FC = () => {
       const isPhone = /^1[3-9]\d{9}$/.test(identification);
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identification);
       if (!isPhone && !isEmail) {
-        message.warning('请输入正确的手机号或邮箱');
+        showWarningMessage('请输入正确的手机号或邮箱');
         return;
       }
 
@@ -485,7 +486,7 @@ const LoginPage: React.FC = () => {
       }) as any;
 
       // request.ts已经处理了code !== 1的情况
-      message.success('验证码已发送');
+      showSuccessMessage('验证码已发送');
       setCountdown(60);
     } catch (error: any) {
       // 错误已被request.ts拦截器处理，这里只需记录日志

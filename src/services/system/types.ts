@@ -68,10 +68,11 @@ export const DataScope = {
 } as const;
 export type DataScope = typeof DataScope[keyof typeof DataScope];
 
-// 分页结果
+// 分页结果 - 与后端接口文档保持一致
 export interface PageResult<T> {
-  records: T[];
-  total: number;
-  current: number;
-  size: number;
+  total: number;      // 总记录数
+  pages: number;      // 总页数
+  current: number;    // 当前页码
+  size: number;       // 每页大小
+  records: T[];       // 数据记录列表
 }

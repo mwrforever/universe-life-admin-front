@@ -37,8 +37,9 @@ export interface RoleListVO {
   roleCode: string;
   roleName: string;
   roleType: RoleType;
+  dataScope: DataScope;
   status: CommonStatus;
-  sortOrder?: number;
+  createdAt: string;
 }
 
 // 角色选项VO
@@ -62,7 +63,6 @@ export interface CreateRoleRequest {
 // 更新角色请求
 export interface UpdateRoleRequest {
   roleName?: string;
-  roleType?: RoleType;
   dataScope?: DataScope;
   sortOrder?: number;
   description?: string;
@@ -70,7 +70,7 @@ export interface UpdateRoleRequest {
 
 // 5.1 创建角色
 export const createRole = (data: CreateRoleRequest) => {
-  return request.post<RoleDetailVO>(BASE_URL, data);
+  return request.post<void>(BASE_URL, data);
 };
 
 // 5.2 获取角色详情
@@ -80,7 +80,7 @@ export const getRoleById = (id: string) => {
 
 // 5.3 更新角色
 export const updateRole = (id: string, data: UpdateRoleRequest) => {
-  return request.put<RoleDetailVO>(`${BASE_URL}/${id}`, data);
+  return request.put<void>(`${BASE_URL}/${id}`, data);
 };
 
 // 5.4 删除角色
@@ -103,10 +103,18 @@ export const getRoleOptions = () => {
   return request.get<RoleOptionVO[]>(`${BASE_URL}/options`);
 };
 
-// 5.8 检查角色编码是否存在
-export const checkRoleCodeExists = (roleCode: string, excludeId?: string) => {
-  return request.get<{ exists: boolean }>(`${BASE_URL}/check-code`, { params: { roleCode, excludeId } });
+// 5.8 获取角色的资源权限
+export const getRoleResources = (id: string) => {
+  return request.get<ResourceSimpleVO[]>(`${BASE_URL}/${id}/resources`);
 };
+
+// 资源简单VO
+export interface ResourceSimpleVO {
+  id: string;
+  resourceCode: string;
+  resourceName: string;
+  resourceType: number;
+}
 
 export default {
   createRole,
@@ -116,5 +124,5 @@ export default {
   getRoleList,
   updateRoleStatus,
   getRoleOptions,
-  checkRoleCodeExists,
+  getRoleResources,
 };

@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Button,
   Select,
   Space,
-  Tag,
   Modal,
   Form,
-  message,
-  Popconfirm,
   Input,
+  Tooltip,
   Row,
   Col,
 } from 'antd';
+import { showSuccessMessage } from '../../utils/antdStatic';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -19,46 +18,82 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { roleApi } from '../../services/system';
-import type { RoleListVO, RoleListParams } from '../../services/system';
+import type { RoleListVO } from '../../services/system';
 import { RoleType, DataScope, CommonStatus } from '../../services/system';
-import { SearchFilterCard, PageContainer, DataTable, FormField, StyledInput, StyledSelect } from '../../components/System';
+import { SearchFilterCard, PageContainer, DataTable, FormField, StyledInput, StyledSelect, EnumDisplay, commonStatusConfig, roleTypeConfig } from '../../components/System';
 import { useTheme } from '../../context/ThemeContext';
+import { useTableLocalRefresh } from '../../hooks/useTableLocalRefresh';
 
 const RoleManagement: React.FC = () => {
   const { isDarkMode } = useTheme();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<RoleListVO[]>([]);
-  const [total, setTotal] = useState(0);
-  const [params, setParams] = useState<RoleListParams>({ page: 1, size: 10 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRole, setEditingRole] = useState<RoleListVO | null>(null);
   const [form] = Form.useForm();
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await roleApi.getRoleList(params);
-      setData(res.data?.records || []);
-      setTotal(res.data?.total || 0);
-    } catch (error) {
-      message.error('获取角色列表失败');
-    } finally {
-      setLoading(false);
-    }
+  // 使用表格局部刷新 Hook
+  const {
+    displayData,
+    loading,
+    pagination,
+    handleDelete: hookHandleDelete,
+    handleUpdate: hookHandleUpdate,
+    handleCreate: hookHandleCreate,
+    handlePageChange,
+    handleFilterChange,
+    refresh,
+  } = useTableLocalRefresh<RoleListVO>({
+    primaryKey: 'id',
+    spareCount: 5,
+    filterValidator: (item, filters) => {
+      if (filters.keyword) {
+        const keyword = filters.keyword.toLowerCase();
+        const matchCode = item.roleCode?.toLowerCase().includes(keyword);
+        const matchName = item.roleName?.toLowerCase().includes(keyword);
+        if (!matchCode && !matchName) return false;
+      }
+      if (filters.roleType !== undefined && item.roleType !== filters.roleType) {
+        return false;
+      }
+      if (filters.status !== undefined && item.status !== filters.status) {
+        return false;
+      }
+      return true;
+    },
+    fetchList: async (params) => {
+      const res = await roleApi.getRoleList(params) as any;
+      return res.data;
+    },
+    deleteItem: async (id) => {
+      await roleApi.deleteRole(id);
+    },
+    updateItem: async (id, data) => {
+      await roleApi.updateRole(id, data);
+      const res = await roleApi.getRoleById(id) as any;
+      return res.data as RoleListVO;
+    },
+    createItem: async (data) => {
+      await roleApi.createRole(data as any);
+      return null as any;
+    },
+  });
+
+  // 计算活跃筛选条件数量
+  const filterCount = useMemo(() => {
+    return Object.values(searchValues).filter(v => v !== undefined && v !== '').length;
+  }, [searchValues]);
+
+  const handleSearchChange = (key: string, value: any) => {
+    setSearchValues(prev => ({ ...prev, [key]: value }));
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [params]);
-
-  const handleSearch = (values: any) => {
-    setParams({ ...params, ...values, page: 1 });
+  const handleSearch = () => {
+    handleFilterChange(searchValues, true);
   };
 
   const handleReset = () => {
     setSearchValues({});
-    setParams({ page: 1, size: 10 });
+    handleFilterChange({});
   };
 
   const handleEdit = async (record: RoleListVO) => {
@@ -68,7 +103,7 @@ const RoleManagement: React.FC = () => {
       form.setFieldsValue(res.data);
       setModalVisible(true);
     } catch (error) {
-      message.error('获取角色详情失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -80,21 +115,20 @@ const RoleManagement: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await roleApi.deleteRole(id);
-      message.success('删除成功');
-      fetchData();
+      await hookHandleDelete(id);
+      showSuccessMessage('角色删除成功');
     } catch (error) {
-      message.error('删除失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
   const handleStatusChange = async (id: string, status: number) => {
     try {
       await roleApi.updateRoleStatus(id, status as CommonStatus);
-      message.success('状态更新成功');
-      fetchData();
+      showSuccessMessage('角色状态更新成功');
+      await hookHandleUpdate(id, { status: status as CommonStatus } as Partial<RoleListVO>);
     } catch (error) {
-      message.error('状态更新失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -102,16 +136,16 @@ const RoleManagement: React.FC = () => {
     try {
       const values = await form.validateFields();
       if (editingRole) {
-        await roleApi.updateRole(editingRole.id, values);
-        message.success('更新成功');
+        await hookHandleUpdate(editingRole.id, values);
+        showSuccessMessage('角色信息更新成功');
       } else {
-        await roleApi.createRole(values);
-        message.success('创建成功');
+        await hookHandleCreate(values);
+        showSuccessMessage('角色创建成功');
+        refresh();
       }
       setModalVisible(false);
-      fetchData();
     } catch (error) {
-      message.error('操作失败');
+      // 错误已由 request 拦截器处理
     }
   };
 
@@ -149,15 +183,9 @@ const RoleManagement: React.FC = () => {
       dataIndex: 'roleType',
       key: 'roleType',
       width: 120,
-      render: (type: number) => {
-        const map: Record<number, { color: string; text: string }> = {
-          0: { color: 'red', text: '系统角色' },
-          1: { color: 'blue', text: '业务角色' },
-          2: { color: 'green', text: '自定义角色' },
-        };
-        const item = map[type] || { color: 'default', text: '未知' };
-        return <Tag color={item.color}>{item.text}</Tag>;
-      },
+      render: (type: RoleType) => (
+        <EnumDisplay value={type} config={roleTypeConfig} size="small" />
+      ),
     },
     {
       title: '排序',
@@ -170,17 +198,19 @@ const RoleManagement: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 80,
-      render: (status: number) => (
-        <Tag color={status === 1 ? 'success' : 'default'}>{status === 1 ? '启用' : '禁用'}</Tag>
+      render: (status: CommonStatus) => (
+        <EnumDisplay value={status} config={commonStatusConfig} size="small" />
       ),
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 180,
       render: (_, record) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          <Tooltip title="编辑">
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+          </Tooltip>
           <Select
             size="small"
             value={record.status}
@@ -188,21 +218,14 @@ const RoleManagement: React.FC = () => {
             onChange={(value) => handleStatusChange(record.id, value)}
             options={statusOptions}
           />
-          <Popconfirm title="确定删除该角色吗？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Tooltip title="删除">
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
-  const filterCount = useMemo(() => {
-    return Object.values(searchValues).filter(v => v !== undefined && v !== '').length;
-  }, [searchValues]);
-
-  const handleSearchChange = (key: string, value: any) => {
-    setSearchValues(prev => ({ ...prev, [key]: value }));
-  };
 
   return (
     <PageContainer
@@ -219,8 +242,9 @@ const RoleManagement: React.FC = () => {
         subtitle="根据条件快速查找角色"
         icon={<SafetyOutlined />}
         accentColor="#faad14"
-        onSearch={() => handleSearch(searchValues)}
+        onSearch={handleSearch}
         onReset={handleReset}
+        onRefresh={refresh}
         filterCount={filterCount}
       >
         <FormField label="关键词">
@@ -259,19 +283,19 @@ const RoleManagement: React.FC = () => {
       <DataTable<RoleListVO>
         title="角色列表"
         columns={columns}
-        dataSource={data}
+        dataSource={displayData}
         rowKey="id"
         loading={loading}
         onAdd={handleAdd}
         addButtonText="新增角色"
         pagination={{
-          current: params.page,
-          pageSize: params.size,
-          total,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (t: number) => `共 ${t} 条`,
-          onChange: (page: number, size: number) => setParams({ ...params, page, size }),
+          onChange: handlePageChange,
         }}
       />
 

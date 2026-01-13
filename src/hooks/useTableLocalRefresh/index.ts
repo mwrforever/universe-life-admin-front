@@ -540,8 +540,17 @@ export function useTableLocalRefresh<T extends Record<string, any>>(
         return;
       }
 
+      // 获取原始数据
+      const originalItem = displayData[itemIndex];
+
       // 调用后端更新接口
-      const updatedItem = await updateItem(id, data);
+      const updateResult = await updateItem(id, data);
+
+      // 合并原始数据和更新结果
+      const updatedItem: T = {
+        ...originalItem,
+        ...updateResult,
+      };
 
       // 验证更新后的数据是否满足筛选条件
       const meetsFilter = validateItem(updatedItem);

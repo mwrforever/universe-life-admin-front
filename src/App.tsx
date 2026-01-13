@@ -4,53 +4,26 @@
  * 基于宇宙概念的企业级管理后台
  * 集成 ProLayout 高级沉浸式布局和动态主题系统
  * 支持多页面路由导航和表单认证
+ * 支持页面刷新后路由持久化
  *
  * @author James
- * @version 3.0.0 - 添加路由懒加载优化
+ * @version 4.0.0 - 添加路由持久化支持
  */
 
-import React, { useState, Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { ConfigProvider, Spin } from 'antd'
+import React, { Suspense, lazy, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { ConfigProvider, Spin, App as AntdApp } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { ThemeProvider } from './context/ThemeContext'
 import ProBasicLayout from './components/layout/ProBasicLayout'
 import { useAuth } from './hooks/useAuth'
+import { setAntdStaticInstances } from './utils/antdStatic'
+import { routeConfig, DEFAULT_PATH } from './routes/routeConfig'
+import { getPageKeyFromPathOrDefault, getPathFromPageKey, isValidPath } from './utils/routeUtils'
 import './App.css'
 
 // 懒加载页面组件 - 实现代码分割
 const LoginPage = lazy(() => import('./pages/auth').then(m => ({ default: m.LoginPage })))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-
-// System 模块页面懒加载
-const UserManagement = lazy(() => import('./pages/System').then(m => ({ default: m.UserManagement })))
-const ResourceManagement = lazy(() => import('./pages/System').then(m => ({ default: m.ResourceManagement })))
-const RoleManagement = lazy(() => import('./pages/System').then(m => ({ default: m.RoleManagement })))
-const DepartmentManagement = lazy(() => import('./pages/System').then(m => ({ default: m.DepartmentManagement })))
-const EmployeeManagement = lazy(() => import('./pages/System').then(m => ({ default: m.EmployeeManagement })))
-
-// 页面映射类型
-type PageKey =
-  | 'dashboard'
-  | 'system'
-  | 'system-user'
-  | 'system-resource'
-  | 'system-role'
-  | 'system-department'
-  | 'system-employee'
-  | 'orders'
-  | 'settings'
-
-// 页面组件映射 - 使用懒加载组件
-const pageComponents: Record<PageKey, React.LazyExoticComponent<React.ComponentType<any>>> = {
-  dashboard: Dashboard as React.LazyExoticComponent<React.ComponentType<any>>,
-  system: UserManagement,
-  'system-user': UserManagement,
-  'system-resource': ResourceManagement,
-  'system-role': RoleManagement,
-  'system-department': DepartmentManagement,
-  'system-employee': EmployeeManagement,
-} as Record<PageKey, React.LazyExoticComponent<React.ComponentType<any>>>
 
 // 加载中组件
 const LoadingFallback: React.FC = () => (
@@ -74,18 +47,19 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>
 }
 
-// 主布局组件（带页面切换）
+// 主布局组件（基于 URL 路由）
 const MainLayout: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<PageKey>('dashboard')
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const renderCurrentPage = () => {
-    const PageComponent = pageComponents[currentPage]
-    return <PageComponent />
-  }
+  // 从 URL 路径获取当前页面 key
+  const currentPage = getPageKeyFromPathOrDefault(location.pathname)
 
+  // 处理页面切换 - 使用 navigate 更新 URL
   const handlePageChange = (pageKey: string) => {
-    if (pageComponents[pageKey as PageKey]) {
-      setCurrentPage(pageKey as PageKey)
+    const path = getPathFromPageKey(pageKey)
+    if (path) {
+      navigate(path)
     }
   }
 
@@ -95,11 +69,38 @@ const MainLayout: React.FC = () => {
       onPageChange={handlePageChange}
     >
       <Suspense fallback={<LoadingFallback />}>
-        {renderCurrentPage()}
+        <Routes>
+          {/* 动态生成路由 */}
+          {routeConfig.map(route => (
+            <Route
+              key={route.key}
+              path={route.path}
+              element={<route.component />}
+            />
+          ))}
+          
+          {/* 根路径重定向到默认页面 */}
+          <Route path="/" element={<Navigate to={DEFAULT_PATH} replace />} />
+          
+          {/* 404 - 无效路径重定向到默认页面 */}
+          <Route path="*" element={<Navigate to={DEFAULT_PATH} replace />} />
+        </Routes>
       </Suspense>
     </ProBasicLayout>
   )
 }
+
+// antd 静态方法初始化组件
+const AntdStaticInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { message, notification, modal } = AntdApp.useApp();
+
+  useEffect(() => {
+    // 将 antd 静态方法实例注册到全局，供 axios 拦截器等非组件代码使用
+    setAntdStaticInstances(message, notification, modal);
+  }, [message, notification, modal]);
+
+  return <>{children}</>;
+};
 
 // 主应用组件
 function App() {
@@ -107,29 +108,33 @@ function App() {
     <BrowserRouter>
       <ThemeProvider>
         <ConfigProvider locale={zhCN}>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              {/* 公开路由 */}
-              <Route
-                path="/login"
-                element={
-                  <Suspense fallback={<LoadingFallback />}>
-                    <LoginPage />
-                  </Suspense>
-                }
-              />
+          <AntdApp>
+            <AntdStaticInitializer>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* 公开路由 */}
+                <Route
+                  path="/login"
+                  element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LoginPage />
+                    </Suspense>
+                  }
+                />
 
-              {/* 受保护路由 */}
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </Suspense>
+                {/* 受保护路由 - 使用通配符匹配所有路径 */}
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </Suspense>
+            </AntdStaticInitializer>
+          </AntdApp>
         </ConfigProvider>
       </ThemeProvider>
     </BrowserRouter>

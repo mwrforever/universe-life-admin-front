@@ -12,21 +12,22 @@ const BASE_URL = '/user/admin/department';
 export interface DepartmentListParams {
   page?: number;
   size?: number;
+  parentId?: string;  // 父部门ID筛选
   status?: CommonStatus;
   keyword?: string;
 }
 
-// 部门详情VO
+// 部门详情VO - 与后端接口文档保持一致
 export interface DepartmentDetailVO {
   id: string;
-  departmentCode: string;
-  departmentName: string;
   parentId?: string;
   parentName?: string;
+  deptCode: string;      // 部门编码
+  deptName: string;      // 部门名称
   leaderId?: string;
   leaderName?: string;
-  status: CommonStatus;
   sortOrder?: number;
+  status: CommonStatus;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -35,54 +36,58 @@ export interface DepartmentDetailVO {
 // 部门列表VO
 export interface DepartmentListVO {
   id: string;
-  departmentCode: string;
-  departmentName: string;
   parentId?: string;
-  parentName?: string;
+  deptCode: string;
+  deptName: string;
   leaderName?: string;
-  status: CommonStatus;
   sortOrder?: number;
+  status: CommonStatus;
+  createdAt: string;
 }
 
 // 部门树VO
 export interface DepartmentTreeVO {
   id: string;
-  departmentCode: string;
-  departmentName: string;
-  status: CommonStatus;
+  parentId?: string;
+  deptCode: string;
+  deptName: string;
+  leaderName?: string;
+  sortOrder?: number;
+  status?: CommonStatus;
   children?: DepartmentTreeVO[];
 }
 
 // 部门选项VO
 export interface DepartmentOptionVO {
   id: string;
-  departmentCode: string;
-  departmentName: string;
+  deptCode: string;
+  deptName: string;
 }
 
-// 创建部门请求
+// 创建部门请求 - 与后端接口文档保持一致
 export interface CreateDepartmentRequest {
-  departmentCode: string;
-  departmentName: string;
-  parentId?: string;
-  leaderId?: string;
-  status?: CommonStatus;
-  sortOrder?: number;
-  description?: string;
+  parentId?: string;       // 父部门ID（0为顶级部门）
+  deptCode: string;        // 部门编码（唯一标识），必填
+  deptName: string;        // 部门名称，必填
+  leaderId?: string;       // 部门负责人ID
+  sortOrder?: number;      // 排序序号
+  status?: CommonStatus;   // 状态：0-禁用 1-启用
+  description?: string;    // 部门描述
 }
 
 // 更新部门请求
 export interface UpdateDepartmentRequest {
-  departmentName?: string;
-  parentId?: string;
-  leaderId?: string;
-  sortOrder?: number;
-  description?: string;
+  parentId?: string;       // 父部门ID（0为顶级部门）
+  deptName?: string;       // 部门名称
+  leaderId?: string;       // 部门负责人ID
+  sortOrder?: number;      // 排序序号
+  status?: CommonStatus;   // 状态：0-禁用 1-启用
+  description?: string;    // 部门描述
 }
 
 // 7.1 创建部门
 export const createDepartment = (data: CreateDepartmentRequest) => {
-  return request.post<DepartmentDetailVO>(BASE_URL, data);
+  return request.post<void>(BASE_URL, data);
 };
 
 // 7.2 获取部门详情
@@ -92,7 +97,7 @@ export const getDepartmentById = (id: string) => {
 
 // 7.3 更新部门
 export const updateDepartment = (id: string, data: UpdateDepartmentRequest) => {
-  return request.put<DepartmentDetailVO>(`${BASE_URL}/${id}`, data);
+  return request.put<void>(`${BASE_URL}/${id}`, data);
 };
 
 // 7.4 删除部门
