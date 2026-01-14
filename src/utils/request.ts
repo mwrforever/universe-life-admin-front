@@ -3,7 +3,7 @@
  * 基于 axios 封装
  *
  * 第一层（拦截器）：检查 HTTP 状态码
- * - 401 → 刷新 token
+ * - 401 → 委托 TokenRefreshService 处理
  * - 403 → 提示权限不足
  * - 其它 → 返回 response.data 给业务层
  *
@@ -15,12 +15,9 @@
 import axios from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { TokenManager } from '@/services/auth/tokenManager';
-import authApi from '@/services/auth/authApi';
+import { TokenRefreshService } from '@/services/auth/tokenRefreshService';
 import { httpLogger } from '@/utils/logger';
 import { showErrorMessage } from '@/utils/antdStatic';
-
-let isRefreshing = false;
-let refreshPromise: Promise<string | null> | null = null;
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8101/api',
@@ -30,9 +27,11 @@ const request = axios.create({
   },
 });
 
-// 请求拦截器：添加 token
+// 请求拦截器：添加 token（同步获取，不在此处刷新）
 request.interceptors.request.use(
   (config) => {
+    // 直接获取当前 token，不触发刷新
+    // 刷新逻辑由 401 响应处理
     const token = TokenManager.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -42,8 +41,7 @@ request.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-
-// 响应拦截器：第一层处理 HTTP 状态码
+// 响应拦截器：处理 HTTP 状态码
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { data } = response;
@@ -82,9 +80,9 @@ request.interceptors.response.use(
 
     const { status, data } = response;
 
-    // HTTP 401：刷新 token 逻辑
+    // HTTP 401：委托 TokenRefreshService 处理
     if (status === 401) {
-      return handle401Error(response, originalRequest);
+      return handle401Error(originalRequest);
     }
 
     // HTTP 403：权限不足
@@ -99,8 +97,6 @@ request.interceptors.response.use(
     if (data && typeof data === 'object' && 'code' in data) {
       const { code, message: msg } = data;
       
-      console.log('🔴 HTTP错误，业务码:', code, '消息:', msg);
-      
       // 业务码为 1 才算成功
       if (code === 1) {
         return data;
@@ -108,7 +104,6 @@ request.interceptors.response.use(
       
       // 业务码不为 1（如 0），显示错误并 reject
       if (!skipNotification) {
-        console.log('🔴 准备显示错误提示:', msg);
         showErrorMessage(msg || '操作失败');
       }
       return Promise.reject({ code, message: msg });
@@ -123,107 +118,33 @@ request.interceptors.response.use(
   }
 );
 
-
 /**
- * 处理 HTTP 401：刷新 token
- * 
- * 关键设计：
- * 1. 使用 refreshPromise 确保同一时间只有一个刷新请求
- * 2. 所有并发的 401 请求都等待同一个 Promise
- * 3. 刷新成功后，所有等待的请求使用新 token 重试
- * 4. 刷新失败后，所有等待的请求都被拒绝
+ * 处理 HTTP 401：委托 TokenRefreshService
  */
-async function handle401Error(_response: AxiosResponse, originalRequest: any): Promise<any> {
-  // 如果已经是重试请求，说明新 token 也无效，直接跳转登录
+async function handle401Error(originalRequest: any): Promise<any> {
+  // 如果已经是重试请求，说明新 token 也无效，直接拒绝
   if (originalRequest._retry) {
-    httpLogger.warn('⚠️ 重试请求仍然返回 401，跳转登录页');
-    TokenManager.clearTokens();
-    redirectToLogin();
+    httpLogger.warn('⚠️ 重试请求仍然返回 401');
     return Promise.reject({ code: 401, message: '认证失败，请重新登录' });
   }
 
   // 标记为重试请求，防止无限循环
   originalRequest._retry = true;
 
-  // 如果正在刷新，等待刷新完成
-  if (isRefreshing && refreshPromise) {
-    httpLogger.info('⏳ 等待正在进行的 Token 刷新...');
-    return refreshPromise.then((newToken) => {
-      if (newToken) {
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return request(originalRequest);
-      }
-      return Promise.reject({ code: 401, message: '认证失败，请重新登录' });
-    });
-  }
-
-  const refreshTokenValue = TokenManager.getRefreshToken();
-
-  if (!refreshTokenValue) {
-    httpLogger.warn('⚠️ 没有 Refresh Token，跳转登录页');
-    TokenManager.clearTokens();
-    redirectToLogin();
-    return Promise.reject({ code: 401, message: '认证失败，请重新登录' });
-  }
-
-  // 开始刷新流程
-  isRefreshing = true;
-  httpLogger.info('🔄 开始刷新 Token...');
-
-  // 创建刷新 Promise，让所有并发请求共享
-  refreshPromise = doRefreshToken(refreshTokenValue);
-
   try {
-    const newToken = await refreshPromise;
+    // 委托 TokenRefreshService 处理刷新
+    const newToken = await TokenRefreshService.handleUnauthorized();
     
     if (newToken) {
+      // 刷新成功，重试原请求
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return request(originalRequest);
     }
     
-    // 刷新失败
+    // 刷新失败（TokenRefreshService 已处理跳转）
     return Promise.reject({ code: 401, message: '认证失败，请重新登录' });
-  } finally {
-    // 重置状态
-    isRefreshing = false;
-    refreshPromise = null;
-  }
-}
-
-/**
- * 执行 Token 刷新
- * @returns 新的 access token，失败返回 null
- */
-async function doRefreshToken(refreshTokenValue: string): Promise<string | null> {
-  try {
-    const refreshResponse = await authApi.refreshToken(refreshTokenValue) as any;
-    
-    if (refreshResponse?.data?.accessToken) {
-      // 注意：OAuth2Service.refreshAccessToken 已经存储了 token
-      // 这里不需要再调用 saveLoginData，避免重复存储
-      const newToken = refreshResponse.data.accessToken;
-      httpLogger.info('✅ Token 刷新成功');
-      return newToken;
-    }
-    
-    httpLogger.error('❌ Token 刷新响应无效');
-    TokenManager.clearTokens();
-    redirectToLogin();
-    return null;
-  } catch (error) {
-    httpLogger.error('❌ Token 刷新失败:', error);
-    TokenManager.clearTokens();
-    redirectToLogin();
-    return null;
-  }
-}
-
-/**
- * 跳转到登录页（防止重复跳转）
- */
-function redirectToLogin(): void {
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login';
+  } catch (err) {
+    return Promise.reject({ code: 401, message: '认证失败，请重新登录' });
   }
 }
 
@@ -237,7 +158,6 @@ function getHttpErrorMessage(status: number): string {
   return messages[status] || '请求失败';
 }
 
-
 /**
  * 业务层辅助函数：处理 API 响应
  * 检查 data.code，code=1 成功，code=0 显示错误
@@ -246,7 +166,6 @@ export function handleApiResponse<T>(data: { code: number; message: string; data
   if (data.code === 1) {
     return data.data;
   }
-  // code = 0 或其它，显示错误
   showErrorMessage(data.message || '操作失败');
   throw { code: data.code, message: data.message };
 }

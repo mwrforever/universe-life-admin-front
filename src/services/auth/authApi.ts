@@ -7,7 +7,6 @@ import request from '../../utils/request';
 import { OAuth2Service } from '@/services/oauth2/authService';
 import { TokenManager } from './tokenManager';
 
-// 注意：request 的 baseURL 已经是 /api，所以这里不需要再加 /api 前缀
 // 登录接口：/api/employee -> 代理去掉/api -> http://localhost:8099/employee
 const AUTH_BASE_URL = '/employee';
 
@@ -56,7 +55,6 @@ export interface SendCodeRequest {
 }
 
 // Token数据 - 适配后端API返回格式
-// 注意：后端登录接口返回的data字段直接包含以下字段（camelCase）
 export interface TokenData {
   accessToken: string;   // 访问令牌 (JWT)
   refreshToken: string;  // 刷新令牌
@@ -74,14 +72,6 @@ export interface ApiResponse<T> {
 
 // 登录响应
 export type LoginResponse = ApiResponse<TokenData>;
-
-// 刷新Token请求
-export interface RefreshTokenRequest {
-  refresh_token: string;
-}
-
-// 刷新Token响应
-export type RefreshTokenResponse = ApiResponse<TokenData>;
 
 /**
  * 密码登录
@@ -103,53 +93,8 @@ export const loginByCaptcha = (data: CaptchaLoginRequest) => {
  * 发送验证码
  * POST /captcha/send (需要包含 identificationType 自动识别手机号/邮箱)
  */
-export const sendVerifyCode = (data: SendCodeRequest) => {
-  return request.post<ApiResponse<null>>(`${COMMON_BASE_URL}/captcha/send`, data);
-};
-
-/**
- * 刷新Token - 使用OAuth2标准端点
- * POST /oauth2/token?grant_type=refresh_token
- * @throws {Error} 当Token刷新失败时抛出异常
- */
-export const refreshToken = async (_refreshTokenValue: string) => {
-  // 调用OAuth2Service进行刷新，它会自动存储新的token
-  await OAuth2Service.refreshAccessToken();
-
-  // 从 TokenManager 获取刷新后的 token（OAuth2Service 已经存储了）
-  const accessToken = TokenManager.getAccessToken();
-  const refreshTokenStored = TokenManager.getRefreshToken();
-
-  if (!accessToken) {
-    throw new Error('Token刷新后无法获取新的accessToken');
-  }
-
-  // 返回兼容的响应格式（供现有代码使用）
-  // 注意：这里不需要再调用 saveLoginData，因为 OAuth2Service 已经存储了
-  return {
-    code: 1,
-    message: 'success',
-    data: {
-      accessToken: accessToken,
-      refreshToken: refreshTokenStored || '',
-      expiresIn: '7200', // 2小时，转换为字符串
-      tokenType: 'Bearer',
-    },
-    timestamp: Date.now(),
-  } as RefreshTokenResponse;
-};
-
-/**
-/**
- * 获取当前登录用户信息
- * GET /api/user/admin/sys-user/profile
- */
-/**
- * 获取当前登录用户信息
- * GET /api/user/admin/sys-user/profile
- */
-export const getUserProfile = () => {
-  return request.get<ApiResponse<any>>('/user/admin/sys-user/profile');
+export const sendVerifyCode = (data: SendCodeRequest): Promise<ApiResponse<null>> => {
+  return request.post(`${COMMON_BASE_URL}/captcha/send`, data);
 };
 
 /**
@@ -192,7 +137,5 @@ export default {
   loginByPassword,
   loginByCaptcha,
   sendVerifyCode,
-  getUserProfile,
-  refreshToken,
   logout,
 };

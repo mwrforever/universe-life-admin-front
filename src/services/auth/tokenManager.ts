@@ -5,32 +5,22 @@
  */
 
 import { authLogger } from '@/utils/logger';
+import type { SysUserProfileVO } from '@/services/system/sysUserProfileApi';
 
-// ID Token Payload 中的用户信息
-export interface IdTokenPayload {
-  sub: string;           // 用户标识
-  iss: string;           // 签发者
-  user_name: string;     // 用户名
-  user_avatar: string;   // 用户头像
-  auth_time: number;     // 认证时间
-  exp: number;           // 过期时间
-  iat: number;           // 签发时间
-}
-
-// 用户信息（从 id_token 解析）
+// 用户基本信息（用于导航栏等轻量展示）
 export interface UserInfo {
-  sub: string;
-  userName: string;
-  userAvatar: string;
-  authTime: number;
-  employeeNo?: string;   // 员工工号(从getUserProfile接口获取)
+  employeeNo: string;       // 员工工号
+  userAvatar: string;       // 原始头像key（未签名），用于按需签名
 }
+
+// 完整用户资料缓存
+export type UserProfile = SysUserProfileVO;
 
 const TOKEN_KEYS = {
   ACCESS_TOKEN: 'universe_access_token',
   REFRESH_TOKEN: 'universe_refresh_token',
-  ID_TOKEN: 'universe_id_token',
   USER_INFO: 'universe_user_info',
+  USER_PROFILE: 'universe_user_profile',  // 完整用户资料缓存
   TOKEN_EXPIRES_AT: 'universe_token_expires_at',
   REFRESH_EXPIRES_AT: 'universe_refresh_expires_at',
 };
@@ -86,74 +76,30 @@ export class TokenManager {
   }
 
   /**
-   * 存储 ID Token
-   */
-  static setIdToken(token: string): void {
-    localStorage.setItem(TOKEN_KEYS.ID_TOKEN, token);
-    authLogger.info('✅ ID Token已存储');
-  }
-
-  /**
-   * 获取 ID Token
-   */
-  static getIdToken(): string | null {
-    return localStorage.getItem(TOKEN_KEYS.ID_TOKEN);
-  }
-
-  /**
-   * 解析 JWT Token 获取 Payload
-   */
-  static parseJwtPayload<T>(token: string): T | null {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => `%${  (`00${  c.charCodeAt(0).toString(16)}`).slice(-2)}`)
-          .join('')
-      );
-      return JSON.parse(jsonPayload) as T;
-    } catch {
-      authLogger.error('❌ 解析JWT Token失败');
-      return null;
-    }
-  }
-
-  /**
-   * 从 ID Token 解析用户信息
-   */
-  static parseUserInfoFromIdToken(idToken: string): UserInfo | null {
-    const payload = this.parseJwtPayload<IdTokenPayload>(idToken);
-    if (!payload) {
-      return null;
-    }
-    return {
-      sub: payload.sub,
-      userName: payload.user_name,
-      userAvatar: payload.user_avatar,
-      authTime: payload.auth_time,
-    };
-  }
-
-  /**
    * 存储用户信息
    */
   static setUserInfo(userInfo: UserInfo): void {
     localStorage.setItem(TOKEN_KEYS.USER_INFO, JSON.stringify(userInfo));
-    authLogger.info('✅ 用户信息已存储:', userInfo.userName);
+    authLogger.info('✅ 用户信息已存储:', userInfo.employeeNo);
   }
 
 
   /**
    * 更新用户信息（合并现有信息）
+   * 触发 storage 事件以同步其他标签页/组件
    */
   static updateUserInfo(updates: Partial<UserInfo>): void {
     const currentInfo = this.getUserInfo();
     if (currentInfo) {
       const updatedInfo = { ...currentInfo, ...updates };
       this.setUserInfo(updatedInfo);
-      authLogger.info('✅ 用户信息已更新');
+      // 手动触发 storage 事件以通知同一页面的其他组件
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: TOKEN_KEYS.USER_INFO,
+        newValue: JSON.stringify(updatedInfo),
+        oldValue: JSON.stringify(currentInfo),
+      }));
+      authLogger.info('✅ 用户信息已更新并触发同步');
     } else {
       // 如果没有现有信息，创建新的用户信息
       this.setUserInfo(updates as UserInfo);
@@ -177,12 +123,70 @@ export class TokenManager {
   }
 
   /**
+   * 存储完整用户资料
+   */
+  static setUserProfile(profile: UserProfile): void {
+    localStorage.setItem(TOKEN_KEYS.USER_PROFILE, JSON.stringify(profile));
+    // 同时更新简化的 UserInfo（用于导航栏等）
+    this.setUserInfo({
+      employeeNo: profile.employeeNo,
+      userAvatar: profile.avatarUrl || '',
+    });
+    authLogger.info('✅ 用户资料已缓存:', profile.employeeNo);
+  }
+
+  /**
+   * 获取完整用户资料
+   */
+  static getUserProfile(): UserProfile | null {
+    const profileStr = localStorage.getItem(TOKEN_KEYS.USER_PROFILE);
+    if (!profileStr) {
+      return null;
+    }
+    try {
+      return JSON.parse(profileStr) as UserProfile;
+    } catch {
+      authLogger.error('❌ 解析用户资料失败');
+      return null;
+    }
+  }
+
+  /**
+   * 更新用户资料（合并现有信息）
+   * 触发 storage 事件以同步其他标签页/组件
+   */
+  static updateUserProfile(updates: Partial<UserProfile>): void {
+    const currentProfile = this.getUserProfile();
+    if (currentProfile) {
+      const updatedProfile = { ...currentProfile, ...updates };
+      localStorage.setItem(TOKEN_KEYS.USER_PROFILE, JSON.stringify(updatedProfile));
+      // 同时更新简化的 UserInfo
+      this.updateUserInfo({
+        employeeNo: updatedProfile.employeeNo,
+        userAvatar: updatedProfile.avatarUrl || '',
+      });
+      // 手动触发 storage 事件以通知同一页面的其他组件
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: TOKEN_KEYS.USER_PROFILE,
+        newValue: JSON.stringify(updatedProfile),
+        oldValue: JSON.stringify(currentProfile),
+      }));
+      authLogger.info('✅ 用户资料已更新并触发同步');
+    } else {
+      this.setUserProfile(updates as UserProfile);
+    }
+  }
+
+  /**
    * 清除所有令牌和用户信息
    */
   static clearTokens(): void {
-    Object.values(TOKEN_KEYS).forEach((key) => {
-      localStorage.removeItem(key);
-    });
+    localStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(TOKEN_KEYS.USER_INFO);
+    localStorage.removeItem(TOKEN_KEYS.USER_PROFILE);
+    localStorage.removeItem(TOKEN_KEYS.TOKEN_EXPIRES_AT);
+    localStorage.removeItem(TOKEN_KEYS.REFRESH_EXPIRES_AT);
     authLogger.info('🧹 所有Token和认证数据已清除');
   }
 
@@ -231,8 +235,7 @@ export class TokenManager {
     this.setAccessToken(tokenData.accessToken, expiresInValue);
     this.setRefreshToken(tokenData.refreshToken);
 
-    // 注意：新接口不返回 id_token，需要通过其他方式获取用户信息
-    // 暂时先存储基本信息，后续在登录流程中调用 getUserProfile 获取完整信息
+    // 注意：登录后需要调用 getProfile 接口获取用户信息
 
     authLogger.info('✅ 登录数据已存储');
   }

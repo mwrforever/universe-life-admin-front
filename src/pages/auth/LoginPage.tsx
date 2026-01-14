@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import styled from '@emotion/styled';
 import { authApi, TokenManager, UserAuthType, CaptchaUsageType } from '@/services/auth';
+import { sysUserProfileApi } from '@/services/system';
 import { authLogger } from '@/utils/logger';
 import { showSuccessMessage, showWarningMessage } from '@/utils/antdStatic';
 
@@ -390,16 +391,13 @@ const LoginPage: React.FC = () => {
 
       // 获取用户信息并缓存
       try {
-        const userProfile = await authApi.getUserProfile() as any;
+        const userProfile = await sysUserProfileApi.getPersonProfile();
         if (userProfile.code === 1 && userProfile.data) {
-          TokenManager.updateUserInfo({
-            employeeNo: userProfile.data.employeeNo,
-            userAvatar: userProfile.data.avatar,
-          });
-          authLogger.info('✅ 用户信息已更新:', userProfile.data);
+          TokenManager.setUserProfile(userProfile.data);
+          authLogger.info('✅ 用户资料已缓存:', userProfile.data.employeeNo);
         }
       } catch (err) {
-        authLogger.warn('⚠️ 获取用户信息失败，将继续登录流程');
+        authLogger.warn('⚠️ 获取用户资料失败，将继续登录流程');
       }
 
       authLogger.info('✅ 密码登录成功');
@@ -432,16 +430,13 @@ const LoginPage: React.FC = () => {
 
       // 获取用户信息并缓存
       try {
-        const userProfile = await authApi.getUserProfile() as any;
+        const userProfile = await sysUserProfileApi.getPersonProfile();
         if (userProfile.code === 1 && userProfile.data) {
-          TokenManager.updateUserInfo({
-            employeeNo: userProfile.data.employeeNo,
-            userAvatar: userProfile.data.avatar,
-          });
-          authLogger.info('✅ 用户信息已更新:', userProfile.data);
+          TokenManager.setUserProfile(userProfile.data);
+          authLogger.info('✅ 用户资料已缓存:', userProfile.data.employeeNo);
         }
       } catch (err) {
-        authLogger.warn('⚠️ 获取用户信息失败，将继续登录流程');
+        authLogger.warn('⚠️ 获取用户资料失败，将继续登录流程');
       }
 
       authLogger.info('✅ 验证码登录成功');

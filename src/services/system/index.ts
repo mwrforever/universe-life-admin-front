@@ -15,6 +15,7 @@ export { default as employeeApi } from './employeeApi';
 export { default as userRoleApi } from './userRoleApi';
 export { default as resourceRoleApi } from './resourceRoleApi';
 export { default as roleDepartmentApi } from './roleDepartmentApi';
+export { default as sysUserProfileApi } from './sysUserProfileApi';
 
 // 导出各模块接口类型
 export type {
@@ -87,3 +88,10 @@ export type {
   UserDetailVO,
   UpdateUserDetailRequest,
 } from './userDetailApi';
+
+export type {
+  SysUserProfileVO,
+  UpdateProfileRequest,
+  UpdatePasswordRequest,
+} from './sysUserProfileApi';
+export { VerificationType } from './sysUserProfileApi';

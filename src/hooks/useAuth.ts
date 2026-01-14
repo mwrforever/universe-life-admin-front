@@ -1,43 +1,96 @@
 /**
  * 认证状态管理Hook
- * 提供统一的认证状态管理和操作方法（前后端分离表单认证版本）
+ * 提供统一的认证状态管理和操作方法
+ * Token 刷新逻辑已委托给 TokenRefreshService
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TokenManager } from '@/services/auth/tokenManager';
+import { TokenRefreshService } from '@/services/auth/tokenRefreshService';
 import authApi from '@/services/auth/authApi';
-import type { UserInfo } from '@/services/auth/tokenManager';
+import { sysUserProfileApi } from '@/services/system';
+import type { UserInfo, UserProfile } from '@/services/auth/tokenManager';
 import { authLogger } from '@/utils/logger';
+
+// 节流时间（毫秒）
+const REFRESH_THROTTLE_MS = 5000;
 
 export interface UseAuthReturn {
   user: UserInfo | null;
+  profile: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
   logout: () => Promise<void>;
   refreshUser: () => void;
+  refreshProfile: () => Promise<void>;
+  isRefreshing: boolean;
 }
 
 export const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 使用 ref 来跟踪是否已经初始化，避免重复检查
   const isInitialized = useRef(false);
   const isChecking = useRef(false);
+  // 节流：记录上次刷新时间
+  const lastRefreshTime = useRef(0);
 
-  // ✅ 优化：基于token判断认证状态，而不是user
+  // 基于 token 判断认证状态
   const isAuthenticated = TokenManager.isLoggedIn();
 
   const refreshUser = useCallback(() => {
     try {
       const currentUser = TokenManager.getUserInfo();
+      const currentProfile = TokenManager.getUserProfile();
       setUser(currentUser);
+      setProfile(currentProfile);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取用户信息失败');
       setUser(null);
+      setProfile(null);
+    }
+  }, []);
+
+  /**
+   * 刷新用户资料（带节流）
+   * 从服务器重新获取最新资料并更新缓存
+   */
+  const refreshProfile = useCallback(async () => {
+    // 节流检查
+    const now = Date.now();
+    if (now - lastRefreshTime.current < REFRESH_THROTTLE_MS) {
+      authLogger.info('⏳ 刷新请求被节流，请稍后再试');
+      return;
+    }
+    lastRefreshTime.current = now;
+
+    if (!TokenManager.isLoggedIn()) {
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      const res = await sysUserProfileApi.getPersonProfile();
+      if (res.code === 1 && res.data) {
+        TokenManager.setUserProfile(res.data);
+        setProfile(res.data);
+        setUser({
+          employeeNo: res.data.employeeNo,
+          userAvatar: res.data.avatarUrl || '',
+        });
+        authLogger.info('✅ 用户资料已刷新');
+      }
+    } catch (err) {
+      authLogger.error('❌ 刷新用户资料失败:', err);
+      setError(err instanceof Error ? err.message : '刷新用户资料失败');
+    } finally {
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -47,37 +100,41 @@ export const useAuth = (): UseAuthReturn => {
       setError(null);
 
       try {
-        // ✅ 调用OAuth2撤销流程（已改造authApi.logout）
         await authApi.logout();
-        authLogger.info('✅ OAuth2 Token撤销成功');
+        authLogger.info('✅ Token 撤销成功');
       } catch (err) {
-        authLogger.warn('⚠️ OAuth2 Token撤销失败，继续清理本地数据');
+        authLogger.warn('⚠️ Token 撤销失败，继续清理本地数据');
       }
 
       TokenManager.clearTokens();
       setUser(null);
+      setProfile(null);
       authLogger.info('✅ 本地登出完成，跳转到登录页');
       window.location.href = '/login';
     } catch (err) {
       setError(err instanceof Error ? err.message : '登出失败');
       TokenManager.clearTokens();
       setUser(null);
+      setProfile(null);
       window.location.href = '/login';
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+
+  /**
+   * 检查认证状态
+   * 使用 TokenRefreshService.getValidToken() 进行懒加载检查
+   */
   const checkAuthStatus = useCallback(async () => {
     // 防止并发检查
     if (isChecking.current) {
-      authLogger.debug('⏸️ 正在检查认证状态，跳过重复检查');
       return;
     }
 
-    // 如果已经检查过一次，且没有新的状态变化，则跳过
-    if (isInitialized.current && !isChecking.current) {
-      authLogger.debug('✅ 已完成初始化检查，跳过重复检查');
+    // 如果已经检查过一次，跳过
+    if (isInitialized.current) {
       return;
     }
 
@@ -85,55 +142,43 @@ export const useAuth = (): UseAuthReturn => {
       isChecking.current = true;
       setIsLoading(true);
 
-      const hasToken = TokenManager.isLoggedIn();
+      // 使用 TokenRefreshService 获取有效 token（懒加载模式）
+      const validToken = await TokenRefreshService.getValidToken();
 
-      if (hasToken) {
-        // 直接获取用户信息
+      if (validToken) {
+        // 有有效 token，获取缓存的用户信息
         const currentUser = TokenManager.getUserInfo();
+        const currentProfile = TokenManager.getUserProfile();
         setUser(currentUser);
+        setProfile(currentProfile);
         setError(null);
-      } else {
-        // 尝试使用refresh token刷新
-        const refreshTokenValue = TokenManager.getRefreshToken();
-        if (refreshTokenValue) {
-          authLogger.info('🔄 Access Token已过期，尝试刷新...');
-          try {
-            const response = await authApi.refreshToken(refreshTokenValue) as any;
-            if (response.code === 1 && response.data) {
-              TokenManager.saveLoginData(response.data);
-              authLogger.info('✅ Token刷新成功');
-              const currentUser = TokenManager.getUserInfo();
-              setUser(currentUser);
-              setError(null);
-            } else {
-              setUser(null);
-            }
-          } catch (err) {
-            authLogger.warn('⚠️ Token刷新失败');
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
-      }
 
-      setError(null);
+        // 如果没有用户资料缓存，尝试获取
+        if (!currentProfile) {
+          await refreshProfile();
+        }
+      } else {
+        // 无有效 token（TokenRefreshService 已处理跳转）
+        setUser(null);
+        setProfile(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '检查认证状态失败');
       setUser(null);
+      setProfile(null);
     } finally {
       setIsLoading(false);
       isChecking.current = false;
       isInitialized.current = true;
     }
-  }, []);
+  }, [refreshProfile]);
 
-  // ✅ 优化：只在其他标签页修改时才响应，避免同一页面的重复检查
+  // 响应 storage 事件（包括同一页面和其他标签页）
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      // 只在其他标签页修改 localStorage 时才响应
-      if ((e.key === 'universe_access_token' || e.key === 'universe_user_info') && e.newValue !== e.oldValue) {
-        // 重置初始化状态，允许重新检查
+      if (e.key === 'universe_user_info' || e.key === 'universe_user_profile') {
+        refreshUser();
+      } else if (e.key === 'universe_access_token' && e.newValue !== e.oldValue) {
         isInitialized.current = false;
         checkAuthStatus();
       }
@@ -141,11 +186,7 @@ export const useAuth = (): UseAuthReturn => {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [checkAuthStatus]);
-
-  // ✅ 优化：页面重新可见时不自动重新检查，避免不必要的渲染
-  // 移除了visibilitychange监听器
-  // ✅ 优化：移除定时刷新逻辑，改为在请求前检查token是否过期
+  }, [checkAuthStatus, refreshUser]);
 
   useEffect(() => {
     checkAuthStatus();
@@ -153,11 +194,14 @@ export const useAuth = (): UseAuthReturn => {
 
   return {
     user,
-    isAuthenticated, // ✅ 直接返回基于token的认证状态
+    profile,
+    isAuthenticated,
     isLoading,
     error,
     logout,
     refreshUser,
+    refreshProfile,
+    isRefreshing,
   };
 };
 

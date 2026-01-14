@@ -17,7 +17,7 @@ const ResourceManagement = lazy(() => import('../pages/System').then(m => ({ def
 const RoleManagement = lazy(() => import('../pages/System').then(m => ({ default: m.RoleManagement })));
 const DepartmentManagement = lazy(() => import('../pages/System').then(m => ({ default: m.DepartmentManagement })));
 const EmployeeManagement = lazy(() => import('../pages/System').then(m => ({ default: m.EmployeeManagement })));
-const TokenTestPage = lazy(() => import('../pages/auth').then(m => ({ default: m.TokenTestPage })));
+
 
 /**
  * 路由配置接口
@@ -76,11 +76,6 @@ export const routeConfig: RouteConfig[] = [
     path: '/system/employee',
     key: 'system-employee',
     component: EmployeeManagement,
-  },
-  {
-    path: '/dev/token-test',
-    key: 'dev-token-test',
-    component: TokenTestPage,
   },
 ];
 

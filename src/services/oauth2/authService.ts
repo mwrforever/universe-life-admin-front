@@ -1,135 +1,23 @@
 /**
  * OAuth2认证服务 - 精简版
- * 仅保留Token刷新和撤销功能
+ * 仅保留 Token 撤销功能
+ * Token 刷新逻辑已移至 TokenRefreshService
  */
 
 import { authLogger } from '@/utils/logger';
 import { TokenManager } from '@/services/auth/tokenManager';
 
-interface TokenResponse {
-  access_token: string;
-  refresh_token?: string;
-  expires_in: number;
-}
-
 const OAUTH2_CONFIG = {
   CLIENT_ID: import.meta.env.VITE_OAUTH2_CLIENT_ID || 'Kp7vR9mNxq2L8tQwYzba',
-  ACCESS_TOKEN_EXPIRES_IN: 3600,
 };
 
-// 使用相对路径，通过 Vite 代理访问后端，避免 CORS 问题
 const OAUTH2_ENDPOINTS = {
-  TOKEN: '/oauth2/token',
   REVOKE: '/oauth2/revoke',
 };
 
 export class OAuth2Service {
   /**
-   * 刷新访问Token
-   * @throws {Error} 当Token刷新失败时抛出异常
-   */
-  static async refreshAccessToken(): Promise<void> {
-    const refreshToken = TokenManager.getRefreshToken();
-    if (!refreshToken) {
-      authLogger.warn('⚠️ 没有可用的刷新Token');
-      throw new Error('没有可用的刷新Token');
-    }
-
-    authLogger.info('🔄 开始刷新访问Token...');
-    authLogger.info('📤 请求URL:', OAUTH2_ENDPOINTS.TOKEN);
-    authLogger.info('📤 client_id:', OAUTH2_CONFIG.CLIENT_ID);
-
-    const requestBody = new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: OAUTH2_CONFIG.CLIENT_ID,
-    });
-
-    authLogger.info('📤 请求体:', requestBody.toString());
-
-    try {
-      const response = await fetch(OAUTH2_ENDPOINTS.TOKEN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
-        },
-        body: requestBody,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        authLogger.error(`❌ Token刷新请求失败: ${response.status}`, errorText);
-        authLogger.error('❌ 响应头:', Object.fromEntries(response.headers.entries()));
-        
-        // 尝试解析错误响应
-        try {
-          const errorJson = JSON.parse(errorText);
-          authLogger.error('❌ 错误详情:', errorJson);
-        } catch {
-          // 不是 JSON 格式，忽略
-        }
-        
-        TokenManager.clearTokens();
-
-        // 根据 HTTP 状态码转换为业务错误
-        if (response.status === 401) {
-          throw new Error('认证失败，请重新登录');
-        } else if (response.status === 400) {
-          throw new Error('Token无效或已过期');
-        } else {
-          throw new Error(`Token刷新失败: ${response.status}`);
-        }
-      }
-
-      const tokenData = (await response.json()) as TokenResponse;
-
-      if (!tokenData.access_token) {
-        authLogger.error('❌ 刷新响应中缺少access_token');
-        TokenManager.clearTokens();
-        throw new Error('刷新响应中缺少access_token');
-      }
-
-      TokenManager.setAccessToken(tokenData.access_token, tokenData.expires_in || OAUTH2_CONFIG.ACCESS_TOKEN_EXPIRES_IN);
-
-      if (tokenData.refresh_token) {
-        TokenManager.setRefreshToken(tokenData.refresh_token);
-      }
-
-      authLogger.info('✅ Token刷新成功');
-    } catch (err) {
-      // 重新抛出异常，让调用方处理
-      authLogger.error('❌ Token刷新过程中发生异常:', err);
-      TokenManager.clearTokens();
-      throw err;
-    }
-  }
-
-  /**
-   * 检查Token是否需要刷新
-   */
-  static shouldRefreshToken(): boolean {
-    return TokenManager.isTokenExpired();
-  }
-
-  /**
-   * 自动刷新Token（如果需要）
-   * @returns {boolean} 是否需要刷新以及刷新是否成功
-   */
-  static async autoRefreshToken(): Promise<boolean> {
-    if (this.shouldRefreshToken()) {
-      try {
-        await this.refreshAccessToken();
-        return true;
-      } catch (err) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * 撤销Token
+   * 撤销 Token
    */
   static async revokeToken(token: string, tokenTypeHint: 'access_token' | 'refresh_token'): Promise<boolean> {
     try {
@@ -146,14 +34,14 @@ export class OAuth2Service {
       });
 
       if (response.ok || response.status === 200) {
-        authLogger.info(`✅ ${tokenTypeHint}撤销成功`);
+        authLogger.info(`✅ ${tokenTypeHint} 撤销成功`);
         return true;
       }
 
-      authLogger.warn(`⚠️ ${tokenTypeHint}撤销失败: ${response.status}`);
+      authLogger.warn(`⚠️ ${tokenTypeHint} 撤销失败: ${response.status}`);
       return false;
     } catch (err) {
-      authLogger.error(`❌ ${tokenTypeHint}撤销异常:`, err);
+      authLogger.error(`❌ ${tokenTypeHint} 撤销异常:`, err);
       return false;
     }
   }

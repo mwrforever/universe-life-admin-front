@@ -42,6 +42,8 @@ import {
 import type { MenuProps } from 'antd';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useSignedAvatar } from '@/hooks/useSignedAvatar';
+import { ProfileModal, SettingsModal } from '@/components/User';
 import styled from '@emotion/styled';
 import UniverseLifeLogo from '../common/UniverseLifeLogo';
 
@@ -940,8 +942,15 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
   const [collapsed, setCollapsed] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  
+  // 弹窗状态
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [tooltipText, setTooltipText] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 使用签名头像 Hook
+  const { signedUrl: signedAvatarUrl } = useSignedAvatar(user?.userAvatar);
   
   // 根据当前页面计算需要展开的父菜单
   const getOpenKeys = (pageKey: string): string[] => {
@@ -1096,11 +1105,11 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
         console.error('登出失败:', error);
       }
     } else if (key === 'profile') {
-      // 导航到个人资料页面
-      window.location.href = '/profile';
+      // 打开个人资料弹窗
+      setProfileModalOpen(true);
     } else if (key === 'settings') {
-      // 导航到账户设置页面
-      window.location.href = '/settings';
+      // 打开账户设置弹窗
+      setSettingsModalOpen(true);
     }
   };
 
@@ -1269,10 +1278,10 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
             <UserCard isDark={isDarkMode}>
               <Avatar
                 size="small"
-                src={user?.userAvatar}
-                icon={!user?.userAvatar ? <UserOutlined /> : undefined}
+                src={signedAvatarUrl}
+                icon={!signedAvatarUrl ? <UserOutlined /> : undefined}
                 style={{
-                  background: user?.userAvatar ? 'transparent' : undefined,
+                  background: signedAvatarUrl ? 'transparent' : undefined,
                   border: isDarkMode ? '2px solid rgba(255, 255, 255, 0.6)' : '2px solid #667eea',
                   color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : '#667eea',
                 }}
@@ -1311,6 +1320,18 @@ const CosmicNavigation: React.FC<CosmicNavigationProps> = ({
       <CosmicContent isDark={isDarkMode} siderWidth={collapsed ? 80 : 256}>
         {children}
       </CosmicContent>
+
+      {/* 个人资料弹窗 */}
+      <ProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* 账户设置弹窗 */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+      />
     </Layout>
   );
 };
